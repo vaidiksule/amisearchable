@@ -1,76 +1,73 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageFrame } from "@/components/page-frame";
+import { StaticBadge } from "@/components/static-badge";
+import { getCurrentProfile } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Pricing",
 };
 
-const FEATURES = [
-  { name: "One-time domain check", free: true, pro: true },
-  { name: "Embeddable badge", free: "Static snapshot", pro: "Auto-refreshed" },
-  { name: "Per-crawler breakdown", free: true, pro: true },
-  { name: "llms.txt presence check", free: true, pro: true },
-  { name: "Daily re-check", free: false, pro: true },
-  { name: "Email alert on change", free: false, pro: true },
-  { name: "Saved domains dashboard", free: false, pro: true },
-];
+export default async function PricingPage(props: PageProps<"/pricing">) {
+  const profile = await getCurrentProfile();
+  const searchParams = await props.searchParams;
+  const polarError = searchParams.error === "polar";
 
-function Cell({ value }: { value: boolean | string }) {
-  if (value === true) return <span className="text-accent">Yes</span>;
-  if (value === false) return <span className="text-zinc-600">—</span>;
-  return <span>{value}</span>;
-}
-
-export default function PricingPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-16">
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">Pricing</p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight">Free vs Pro</h1>
-      <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
-        The badge is free. Pro is for staying correct after robots.txt changes. Polar
-        checkout is stubbed for this skeleton.
-      </p>
+    <PageFrame>
+      <h1 className="text-3xl font-semibold tracking-tight">Pricing</h1>
+      <p className="mt-3 text-sm text-muted">The badge is free. Pro keeps it correct.</p>
 
-      <div className="mt-10 overflow-hidden rounded-xl border border-border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-surface">
-            <tr>
-              <th className="px-4 py-3 font-medium">Feature</th>
-              <th className="px-4 py-3 font-medium">Free</th>
-              <th className="px-4 py-3 font-medium">Pro · $6/mo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {FEATURES.map((feature) => (
-              <tr key={feature.name} className="border-t border-border">
-                <td className="px-4 py-3">{feature.name}</td>
-                <td className="px-4 py-3 text-muted">
-                  <Cell value={feature.free} />
-                </td>
-                <td className="px-4 py-3 text-muted">
-                  <Cell value={feature.pro} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {polarError ? (
+        <p className="mt-6 text-sm text-warn">Polar is not configured yet.</p>
+      ) : null}
+
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <p className="text-sm text-muted">Free</p>
+          <p className="mt-2 text-2xl font-semibold">$0</p>
+          <ul className="mt-4 space-y-2 text-sm text-muted">
+            <li>One-time check</li>
+            <li>Embeddable badge</li>
+            <li>Manual re-check</li>
+          </ul>
+          <Link href="/" className="mt-6 inline-block text-sm underline underline-offset-4">
+            Check a domain
+          </Link>
+        </div>
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <p className="text-sm text-muted">Pro</p>
+          <p className="mt-2 text-2xl font-semibold">$5/mo</p>
+          <p className="text-sm text-muted">or $40/yr · 5 domains</p>
+          <ul className="mt-4 space-y-2 text-sm text-muted">
+            <li>Daily auto refresh</li>
+            <li>Email when status changes</li>
+            <li>Same badge URL</li>
+          </ul>
+          {profile?.plan === "pro" ? (
+            <Link href="/dashboard" className="mt-6 inline-block text-sm underline underline-offset-4">
+              Dashboard
+            </Link>
+          ) : (
+            <div className="mt-6 flex gap-4 text-sm">
+              <Link href="/checkout?interval=month" className="underline underline-offset-4">
+                Monthly
+              </Link>
+              <Link href="/checkout?interval=year" className="underline underline-offset-4">
+                Yearly
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link
-          href="/"
-          className="inline-flex h-11 items-center rounded-md border border-border px-5 text-sm hover:border-zinc-500"
-        >
-          Run a free check
-        </Link>
-        <button
-          type="button"
-          disabled
-          className="inline-flex h-11 items-center rounded-md bg-zinc-800 px-5 text-sm text-muted"
-        >
-          Checkout via Polar — coming soon
-        </button>
+      <div className="mt-8 rounded-lg border border-border bg-surface p-5">
+        <p className="text-xs text-muted">Badge stays the same after upgrade</p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <StaticBadge verdict="pass" className="h-5" />
+          <StaticBadge verdict="fail" className="h-5" />
+        </div>
       </div>
-    </div>
+    </PageFrame>
   );
 }

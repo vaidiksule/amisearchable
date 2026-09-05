@@ -17,12 +17,12 @@ export function DomainForm() {
       return;
     }
     setError(null);
-    router.push(`/report/${domain}`);
+    router.push(`/report/${domain}?fresh=1`);
   }
 
   return (
     <form onSubmit={onSubmit} className="w-full">
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="text"
           name="domain"
@@ -31,16 +31,16 @@ export function DomainForm() {
           placeholder="example.com"
           autoComplete="url"
           spellCheck={false}
-          className="h-12 flex-1 rounded-md border border-border bg-surface px-4 font-mono text-sm text-foreground outline-none placeholder:text-zinc-600 focus:border-zinc-500"
+          className="h-12 flex-1 rounded-md border border-border bg-surface px-4 font-mono text-sm outline-none placeholder:text-stone-400 focus:border-foreground"
         />
         <button
           type="submit"
-          className="h-12 rounded-md bg-foreground px-5 text-sm font-medium text-background hover:bg-zinc-200"
+          className="h-12 rounded-md bg-foreground px-5 text-sm font-medium text-background hover:bg-stone-800"
         >
-          Check now
+          Check
         </button>
       </div>
-      {error ? <p className="mt-3 text-sm text-orange-400">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-warn">{error}</p> : null}
     </form>
   );
 }

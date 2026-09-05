@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s · amisearchable.cc",
   },
   description:
-    "Check whether AI crawlers like GPTBot, ClaudeBot, and PerplexityBot can access your site. Embed a living badge in your README or footer.",
+    "Check whether AI search bots like OAI-SearchBot, Claude-SearchBot, and PerplexityBot can access your site. Embed a living badge in your README or footer.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

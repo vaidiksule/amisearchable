@@ -1,5 +1,8 @@
 import { renderBadgeSvg } from "@/lib/badge-svg";
+import { getOrCreateCheck } from "@/lib/checks";
 import { normalizeDomain } from "@/lib/domain";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   _request: Request,
@@ -12,12 +15,13 @@ export async function GET(
     return new Response("Invalid domain", { status: 400 });
   }
 
-  const svg = renderBadgeSvg("AI Searchable", "pending", "pending");
+  const check = await getOrCreateCheck(domain);
+  const svg = renderBadgeSvg(check.verdict, check.checkedAt);
 
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "public, max-age=300, s-maxage=300",
     },
   });
 }
