@@ -1,0 +1,61 @@
+import Link from "next/link";
+import { GuideCode, GuideSection } from "@/components/guide-layout";
+import { StaticBadge } from "@/components/static-badge";
+import { embedHtml, embedMarkdown } from "@/lib/domain";
+
+export function AiReadyBadgeGuide() {
+  return (
+    <>
+      <GuideSection title="An embeddable AI crawler badge">
+        <p>
+          An AI ready badge is a small image that states whether search bots can access a
+          domain. Drop it in a GitHub README, docs footer, or portfolio. The image is the
+          status; the link goes to the full crawler report.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <StaticBadge verdict="pass" className="h-5" />
+          <StaticBadge verdict="fail" className="h-5" />
+        </div>
+      </GuideSection>
+
+      <GuideSection title="Markdown for a README">
+        <GuideCode>{embedMarkdown("example.com")}</GuideCode>
+        <p>
+          The alt text is descriptive on purpose: every embed is a tiny SEO signal and
+          should say this is an AI crawler access badge, not a generic image.
+        </p>
+      </GuideSection>
+
+      <GuideSection title="HTML for a site footer">
+        <GuideCode>{embedHtml("example.com")}</GuideCode>
+      </GuideSection>
+
+      <GuideSection title="Free vs monitored">
+        <p>
+          The badge URL does not change if you upgrade. Free snapshots the last check. Pro
+          re-checks daily and emails you if robots.txt starts blocking ChatGPT-User,
+          PerplexityBot, or the other search/fetch bots. That is the difference between a
+          sticker and a monitor.
+        </p>
+        <p>
+          <Link href="/pricing" className="text-foreground underline underline-offset-4">
+            See pricing
+          </Link>
+          . The check itself stays free.
+        </p>
+      </GuideSection>
+
+      <GuideSection title="What “ready” means">
+        <p>
+          Ready means the search and fetch bots are not blocked. It does not mean you will
+          appear in ChatGPT or Perplexity answers. Training crawlers can still be blocked
+          without failing the badge.{" "}
+          <Link href="/guides/gptbot-vs-chatgpt-user" className="text-foreground underline underline-offset-4">
+            Read the bot split
+          </Link>
+          .
+        </p>
+      </GuideSection>
+    </>
+  );
+}

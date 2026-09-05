@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyEmbed } from "@/components/copy-embed";
+import { JsonLd } from "@/components/json-ld";
 import { PageFrame } from "@/components/page-frame";
 import { badgeLabel } from "@/lib/badge-svg";
-import { getOrCreateCheck } from "@/lib/checks";
+import { getLatestCheck, getOrCreateCheck } from "@/lib/checks";
 import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
 import { normalizeDomain } from "@/lib/domain";
+import { SITE_NAME, absoluteUrl } from "@/lib/seo";
 import { formatCheckedAt } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +15,39 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(
   props: PageProps<"/report/[domain]">,
 ): Promise<Metadata> {
-  const { domain } = await props.params;
+  const raw = decodeURIComponent((await props.params).domain);
+  const domain = normalizeDomain(raw);
+
+  if (!domain) {
+    return {
+      title: "Invalid domain",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const cached = await getLatestCheck(domain);
+  const verdictLine =
+    cached?.verdict === "fail"
+      ? `${domain} is blocking at least one AI search bot.`
+      : cached?.verdict === "pass"
+        ? `${domain} allows AI search bots.`
+        : `AI crawler access report for ${domain}.`;
+  const llmsLine = cached
+    ? cached.llmsTxtPresent
+      ? " llms.txt was found."
+      : " llms.txt was not found."
+    : "";
+
   return {
-    title: `${decodeURIComponent(domain)} crawler report`,
+    title: `Is ${domain} blocked from ChatGPT, Claude and Perplexity?`,
+    description: `${verdictLine}${llmsLine} Check GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, and PerplexityBot in robots.txt.`,
+    alternates: { canonical: `/report/${domain}` },
+    openGraph: {
+      title: `Is ${domain} blocked from ChatGPT, Claude and Perplexity?`,
+      description: `${verdictLine}${llmsLine}`,
+      url: `/report/${domain}`,
+      type: "website",
+    },
   };
 }
 
@@ -51,11 +83,40 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
 
   return (
     <PageFrame>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: `Is ${domain} blocked from ChatGPT, Claude and Perplexity?`,
+            url: absoluteUrl(`/report/${domain}`),
+            isPartOf: { "@type": "WebSite", name: SITE_NAME, url: absoluteUrl("/") },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: absoluteUrl("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: `${domain} report`,
+                item: absoluteUrl(`/report/${domain}`),
+              },
+            ],
+          },
+        ]}
+      />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{domain}</h1>
           <p className="mt-2 text-sm text-muted">
-            {formatCheckedAt(result.checkedAt)}
+            AI crawler access report · {formatCheckedAt(result.checkedAt)}
             {result.rateLimited ? " · wait a minute to refresh" : ""}
           </p>
         </div>

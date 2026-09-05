@@ -21,6 +21,18 @@ export type CrawlerName = (typeof ALL_BOTS)[number];
 export type CrawlerStatus = "allowed" | "blocked" | "unspecified";
 export type Verdict = "pass" | "fail";
 
+export const CRAWLER_NOTES: Record<CrawlerName, string> = {
+  "OAI-SearchBot": "Builds the ChatGPT search index. Blocking this hides you from ChatGPT search results.",
+  "ChatGPT-User": "Fetches a page when someone asks ChatGPT about it. This is the live-answer bot, not the training crawler.",
+  PerplexityBot: "Crawls for Perplexity search. Separate from user-initiated fetches inside Perplexity answers.",
+  "Claude-SearchBot": "Indexes the web for Claude search / citations.",
+  "Claude-User": "Fetches a page when Claude needs the live contents to answer.",
+  GPTBot: "Collects data to train OpenAI models. Blocking it does not by itself hide you from ChatGPT answers.",
+  ClaudeBot: "Collects data to train Anthropic models. Informational on the badge; blocking it is a common choice.",
+  "Google-Extended": "Controls Gemini / Google AI training use. It is not Googlebot and does not control Google Search ranking.",
+  CCBot: "Common Crawl. Many models train on Common Crawl snapshots. Not a live answer bot.",
+};
+
 export type CheckResult = {
   domain: string;
   verdict: Verdict;

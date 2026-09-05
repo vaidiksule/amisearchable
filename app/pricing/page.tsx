@@ -5,7 +5,10 @@ import { StaticBadge } from "@/components/static-badge";
 import { getCurrentProfile } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Pricing for AI crawler monitoring and the AI search status badge",
+  description:
+    "The AI ready badge is free. Pro monitors robots.txt daily and emails you if GPTBot, ChatGPT-User, or PerplexityBot access changes.",
+  alternates: { canonical: "/pricing" },
 };
 
 export default async function PricingPage(props: PageProps<"/pricing">) {

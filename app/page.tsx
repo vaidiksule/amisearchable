@@ -1,21 +1,82 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { DomainForm } from "@/components/domain-form";
+import { JsonLd } from "@/components/json-ld";
 import { StaticBadge } from "@/components/static-badge";
+import { embedAlt } from "@/lib/domain";
+import { GUIDES } from "@/lib/guides";
+import { HOME_FAQS, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, absoluteUrl } from "@/lib/seo";
 
 const EXAMPLES = [
+  { domain: "amisearchable.cc", note: "This site" },
   { domain: "vercel.com", note: "Usually ready" },
   { domain: "nytimes.com", note: "Usually blocking" },
 ];
 
+export const metadata: Metadata = {
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+};
+
 export default function Home() {
   return (
     <div className="mx-auto w-full max-w-3xl px-6">
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: SITE_NAME,
+            url: absoluteUrl("/"),
+            description: SITE_DESCRIPTION,
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "AI Searchable",
+            applicationCategory: "DeveloperApplication",
+            operatingSystem: "Web",
+            url: absoluteUrl("/"),
+            description: SITE_DESCRIPTION,
+            offers: [
+              {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
+                name: "Free badge",
+              },
+              {
+                "@type": "Offer",
+                price: "5",
+                priceCurrency: "USD",
+                name: "Pro monitoring",
+              },
+            ],
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: HOME_FAQS.map((faq) => ({
+              "@type": "Question",
+              name: faq.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: faq.answer,
+              },
+            })),
+          },
+        ]}
+      />
+
       <section className="pt-14 pb-10">
         <h1 className="text-4xl font-semibold tracking-tight">
           Is your site visible to AI search?
         </h1>
-        <p className="mt-4 max-w-lg text-muted">
-          Check robots.txt. Get a badge for your README. No account needed.
+        <p className="mt-4 max-w-xl text-muted">
+          Check in 5 seconds. This AI crawler checker reads robots.txt to see if GPTBot,
+          ChatGPT-User, and PerplexityBot can access your site — then gives you a badge for
+          your README.
         </p>
         <div className="mt-8">
           <DomainForm />
@@ -62,7 +123,7 @@ export default function Home() {
             <Link
               key={example.domain}
               href={`/report/${example.domain}`}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 hover:border-foreground/30"
+              className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400"
             >
               <span className="font-mono text-sm">{example.domain}</span>
               <span className="flex items-center gap-3">
@@ -70,7 +131,7 @@ export default function Home() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`/badge/${example.domain}`}
-                  alt={`Badge for ${example.domain}`}
+                  alt={embedAlt(example.domain)}
                   className="h-5"
                 />
               </span>
@@ -83,8 +144,58 @@ export default function Home() {
         <h2 className="text-sm font-medium">What we check</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           Search bots only: OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot,
-          Claude-User. Training crawlers are listed on the report but do not fail the badge.
+          Claude-User. Training crawlers like GPTBot and ClaudeBot are listed on the report
+          but do not fail the badge.{" "}
+          <Link href="/guides/gptbot-vs-chatgpt-user" className="text-foreground underline underline-offset-4">
+            Why that split matters
+          </Link>
+          . This site publishes{" "}
+          <Link href="/llms.txt" className="text-foreground underline underline-offset-4">
+            its own llms.txt
+          </Link>
+          .
         </p>
+      </section>
+
+      <section className="border-t border-border py-14">
+        <h2 className="text-sm font-medium">Guides</h2>
+        <p className="mt-2 text-sm text-muted">
+          AI search visibility, crawler access, and llms.txt — written for the terms people
+          actually search.
+        </p>
+        <ul className="mt-4 space-y-3">
+          {GUIDES.slice(0, 4).map((guide) => (
+            <li key={guide.slug}>
+              <Link
+                href={`/guides/${guide.slug}`}
+                className="text-sm underline underline-offset-4"
+              >
+                {guide.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <Link href="/guides" className="mt-4 inline-block text-sm text-muted underline underline-offset-4">
+          All guides
+        </Link>
+      </section>
+
+      <section className="border-t border-border py-14">
+        <h2 className="text-sm font-medium">FAQ</h2>
+        <dl className="mt-6 space-y-6">
+          {HOME_FAQS.map((faq) => (
+            <div key={faq.question}>
+              <dt className="text-sm font-medium">{faq.question}</dt>
+              <dd className="mt-2 text-sm leading-6 text-muted">
+                {faq.answer}{" "}
+                <Link href={faq.href} className="text-foreground underline underline-offset-4">
+                  Read more
+                </Link>
+                .
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <section className="border-t border-border py-14">

@@ -83,6 +83,38 @@ export async function getOrCreateCheck(
   return { ...live, fromCache: false, rateLimited: false };
 }
 
+export async function listRecentCheckedDomains(
+  limit = 200,
+): Promise<{ hostname: string; checkedAt: string }[]> {
+  const admin = createAdminClient();
+  if (!admin) return [];
+
+  const { data, error } = await admin
+    .from("checks")
+    .select("checked_at, domains!inner(hostname)")
+    .order("checked_at", { ascending: false })
+    .limit(limit * 3);
+
+  if (error || !data) {
+    console.error("Failed to list recent checked domains", error);
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const recent: { hostname: string; checkedAt: string }[] = [];
+
+  for (const row of data) {
+    const domain = row.domains as { hostname?: string } | { hostname?: string }[] | null;
+    const hostname = Array.isArray(domain) ? domain[0]?.hostname : domain?.hostname;
+    if (!hostname || seen.has(hostname)) continue;
+    seen.add(hostname);
+    recent.push({ hostname, checkedAt: row.checked_at });
+    if (recent.length >= limit) break;
+  }
+
+  return recent;
+}
+
 export async function listMonitoredHostnames(): Promise<string[]> {
   const admin = createAdminClient();
   if (!admin) return [];

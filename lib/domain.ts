@@ -33,12 +33,17 @@ export function safeNextPath(next: string | null | undefined): string {
   return next;
 }
 
+export function embedAlt(domain: string): string {
+  return `AI Searchable — AI crawler access badge for ${domain}`;
+}
+
 export function embedHtml(domain: string): string {
   return `<a href="${EMBED_ORIGIN}/report/${domain}">
-  <img src="${EMBED_ORIGIN}/badge/${domain}" alt="AI Searchable">
+  <img src="${EMBED_ORIGIN}/badge/${domain}" alt="${embedAlt(domain)}">
 </a>`;
 }
 
 export function embedMarkdown(domain: string): string {
-  return `[![AI Searchable](${EMBED_ORIGIN}/badge/${domain})](${EMBED_ORIGIN}/report/${domain})`;
+  const alt = embedAlt(domain);
+  return `[![${alt}](${EMBED_ORIGIN}/badge/${domain})](${EMBED_ORIGIN}/report/${domain})`;
 }

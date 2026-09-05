@@ -1,0 +1,47 @@
+# amisearchable.cc
+
+amisearchable.cc is a free AI crawler checker and embeddable badge. Paste any public domain. The tool fetches that domain's robots.txt and llms.txt, then reports whether AI search and training crawlers are allowed, blocked, or unspecified.
+
+## What the checker measures
+
+Search and fetch bots decide whether a site can be retrieved for live AI answers:
+
+- OAI-SearchBot
+- ChatGPT-User
+- PerplexityBot
+- Claude-SearchBot
+- Claude-User
+
+The badge passes when none of those bots are blocked. Training crawlers are listed on the report but do not fail the badge:
+
+- GPTBot
+- ClaudeBot
+- Google-Extended
+- CCBot
+
+llms.txt presence is informational. A missing llms.txt is not a fail.
+
+This confirms crawler permission. It does not guarantee the site will be cited in ChatGPT, Claude, Perplexity, or other AI answers. Citation also depends on content quality, competing sources, and each engine's ranking.
+
+The tool only reads public robots.txt and llms.txt. Anyone can check any public domain.
+
+## Product
+
+- Free: one-time check and a static embeddable badge
+- Pro: daily re-check, email if status changes, same badge URL
+- Badge URL: https://amisearchable.cc/badge/{domain}
+- Report URL: https://amisearchable.cc/report/{domain}
+
+## This site
+
+amisearchable.cc allows AI search and training crawlers. See https://amisearchable.cc/robots.txt and https://amisearchable.cc/llms.txt.
+
+## Guides
+
+- https://amisearchable.cc/guides/gptbot-vs-chatgpt-user
+- https://amisearchable.cc/guides/does-blocking-ai-crawlers-hurt-google
+- https://amisearchable.cc/guides/ai-crawler-user-agents
+- https://amisearchable.cc/guides/llms-txt
+- https://amisearchable.cc/guides/llms-txt-vs-robots-txt
+- https://amisearchable.cc/guides/how-to-allow-perplexitybot
+- https://amisearchable.cc/guides/ai-ready-badge

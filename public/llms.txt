@@ -1,0 +1,29 @@
+# amisearchable.cc
+
+> Free AI crawler checker. Paste a domain to see if GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, PerplexityBot, and other AI search bots are blocked in robots.txt. Embed an AI-Search Ready badge in a README or footer.
+
+This site is open to AI search and training crawlers, including GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot, Google-Extended, and CCBot.
+
+## Product
+
+- [Check a domain](https://amisearchable.cc/): AI crawler access checker for robots.txt and llms.txt
+- [Pricing](https://amisearchable.cc/pricing): Free badge, Pro monitoring for status changes
+- [Guides](https://amisearchable.cc/guides): GEO, AEO, and AI search visibility explainers
+- [Our robots.txt](https://amisearchable.cc/robots.txt)
+- [This file](https://amisearchable.cc/llms.txt)
+- [Full description](https://amisearchable.cc/llms-full.txt)
+
+## Guides
+
+- [GPTBot vs ChatGPT-User vs OAI-SearchBot](https://amisearchable.cc/guides/gptbot-vs-chatgpt-user): Training vs live fetch vs ChatGPT search
+- [Does blocking AI crawlers hurt Google ranking?](https://amisearchable.cc/guides/does-blocking-ai-crawlers-hurt-google): Googlebot and Google-Extended are separate
+- [AI crawler user agents (2026)](https://amisearchable.cc/guides/ai-crawler-user-agents): The bot list this product actually checks
+- [llms.txt explained](https://amisearchable.cc/guides/llms-txt): What the file is and whether you need one
+- [llms.txt vs robots.txt](https://amisearchable.cc/guides/llms-txt-vs-robots-txt): Complementary files, different jobs
+- [How to allow PerplexityBot](https://amisearchable.cc/guides/how-to-allow-perplexitybot): Paste-ready robots.txt rules
+- [AI ready badge](https://amisearchable.cc/guides/ai-ready-badge): Embeddable AI crawler status badge for READMEs
+
+## Optional
+
+- Contact: built by Vaidik
+- Self-check: https://amisearchable.cc/report/amisearchable.cc

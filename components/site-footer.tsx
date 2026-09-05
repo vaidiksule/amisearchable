@@ -9,7 +9,17 @@ export function SiteFooter() {
           <StaticBadge verdict="pass" />
           <span>Built by Vaidik</span>
         </Link>
-        <p>Public robots.txt only.</p>
+        <nav className="flex flex-wrap gap-4">
+          <Link href="/guides" className="hover:text-foreground">
+            Guides
+          </Link>
+          <Link href="/llms.txt" className="hover:text-foreground">
+            llms.txt
+          </Link>
+          <Link href="/pricing" className="hover:text-foreground">
+            Pricing
+          </Link>
+        </nav>
       </div>
     </footer>
   );

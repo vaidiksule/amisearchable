@@ -14,6 +14,9 @@ export async function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-5 text-sm text-muted">
           <ThemeToggle />
+          <Link href="/guides" className="hover:text-foreground">
+            Guides
+          </Link>
           <Link href="/pricing" className="hover:text-foreground">
             Pricing
           </Link>
