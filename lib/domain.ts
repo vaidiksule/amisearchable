@@ -1,3 +1,4 @@
+import type { BadgeStyle } from "@/lib/badge-svg";
 import { EMBED_ORIGIN } from "@/lib/config";
 
 const BLOCKED_HOSTS = new Set(["localhost", "metadata.google.internal"]);
@@ -37,30 +38,35 @@ export function embedAlt(domain: string): string {
   return `AI Searchable — AI crawler access badge for ${domain}`;
 }
 
-export function embedHtml(domain: string): string {
+export function badgeSrc(domain: string, style: BadgeStyle = "shield"): string {
+  const base = `${EMBED_ORIGIN}/badge/${domain}`;
+  return style === "shield" ? base : `${base}?style=${style}`;
+}
+
+export function embedHtml(domain: string, style: BadgeStyle = "shield"): string {
   return `<a href="${EMBED_ORIGIN}/report/${domain}">
-  <img src="${EMBED_ORIGIN}/badge/${domain}" alt="${embedAlt(domain)}">
+  <img src="${badgeSrc(domain, style)}" alt="${embedAlt(domain)}">
 </a>`;
 }
 
-export function embedMarkdown(domain: string): string {
+export function embedMarkdown(domain: string, style: BadgeStyle = "shield"): string {
   const alt = embedAlt(domain);
-  return `[![${alt}](${EMBED_ORIGIN}/badge/${domain})](${EMBED_ORIGIN}/report/${domain})`;
+  return `[![${alt}](${badgeSrc(domain, style)})](${EMBED_ORIGIN}/report/${domain})`;
 }
 
-export function embedAgentPrompt(domain: string): string {
+export function embedAgentPrompt(domain: string, style: BadgeStyle = "shield"): string {
   return `Add this AI-Searchable badge to my project.
 
 If this is a GitHub repository, add it to README.md near the top,
 in the same line as other badges (build status, license, etc.) if any exist.
 Use this exact markdown, don't modify the URL:
 
-${embedMarkdown(domain)}
+${embedMarkdown(domain, style)}
 
 If this is a website codebase, add it to the site footer component
 so it appears on every page. Use this exact HTML, don't modify the URL:
 
-${embedHtml(domain)}
+${embedHtml(domain, style)}
 
 Don't change any other content — just insert this badge in the
 appropriate location.`;

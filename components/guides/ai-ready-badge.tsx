@@ -15,11 +15,21 @@ export function AiReadyBadgeGuide() {
         <div className="flex flex-wrap gap-3">
           <StaticBadge verdict="pass" className="h-5" />
           <StaticBadge verdict="fail" className="h-5" />
+          <StaticBadge verdict="pass" style="pill" className="h-6" />
+          <StaticBadge verdict="pass" style="terminal" className="h-6" />
+          <StaticBadge verdict="pass" style="outline" className="h-7" />
         </div>
       </GuideSection>
 
       <GuideSection title="Markdown for a README">
         <GuideCode>{embedMarkdown("example.com")}</GuideCode>
+        <p>
+          Other looks: append{" "}
+          <code className="font-mono text-foreground">?style=pill</code>,{" "}
+          <code className="font-mono text-foreground">terminal</code>, or{" "}
+          <code className="font-mono text-foreground">outline</code> to the badge image URL.
+          Pick a style on the report page to copy the exact snippet.
+        </p>
         <p>
           The alt text is descriptive on purpose: every embed is a tiny SEO signal and
           should say this is an AI crawler access badge, not a generic image.

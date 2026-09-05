@@ -106,6 +106,27 @@ export default function Home() {
           </div>
         </div>
 
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Pill</p>
+            <div className="mt-3 overflow-x-auto">
+              <StaticBadge verdict="pass" style="pill" className="h-6" />
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Terminal</p>
+            <div className="mt-3 overflow-x-auto">
+              <StaticBadge verdict="pass" style="terminal" className="h-6" />
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Outline</p>
+            <div className="mt-3 overflow-x-auto">
+              <StaticBadge verdict="pass" style="outline" className="h-7" />
+            </div>
+          </div>
+        </div>
+
         <div className="mt-3 rounded-lg border border-border bg-surface p-5">
           <p className="font-mono text-xs text-muted">README.md</p>
           <p className="mt-3 text-sm font-medium">your-project</p>

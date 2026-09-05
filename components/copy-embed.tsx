@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { StaticBadge } from "@/components/static-badge";
+import {
+  BADGE_STYLES,
+  BADGE_STYLE_META,
+  type BadgeStyle,
+} from "@/lib/badge-svg";
 import { embedAgentPrompt, embedHtml, embedMarkdown } from "@/lib/domain";
 
 type Format = "html" | "markdown";
@@ -16,10 +21,12 @@ export function CopyEmbed({
   checkedAt?: string;
 }) {
   const [format, setFormat] = useState<Format>("markdown");
+  const [style, setStyle] = useState<BadgeStyle>("shield");
   const [copied, setCopied] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
-  const snippet = format === "html" ? embedHtml(domain) : embedMarkdown(domain);
-  const agentPrompt = embedAgentPrompt(domain);
+  const snippet =
+    format === "html" ? embedHtml(domain, style) : embedMarkdown(domain, style);
+  const agentPrompt = embedAgentPrompt(domain, style);
 
   async function copy() {
     try {
@@ -43,7 +50,7 @@ export function CopyEmbed({
 
   return (
     <section className="rounded-lg border border-border bg-surface p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-medium">Embed this</h2>
         <div className="flex text-xs">
           {(["markdown", "html"] as const).map((option) => (
@@ -61,12 +68,50 @@ export function CopyEmbed({
         </div>
       </div>
 
+      <div className="mb-4">
+        <p className="text-xs text-muted">Badge style</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {BADGE_STYLES.map((option) => {
+            const meta = BADGE_STYLE_META[option];
+            const selected = style === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setStyle(option)}
+                className={`rounded-lg border px-3 py-3 text-left transition-colors ${
+                  selected
+                    ? "border-foreground bg-background"
+                    : "border-border bg-background/60 hover:border-stone-400"
+                }`}
+              >
+                <div className="overflow-x-auto">
+                  <StaticBadge
+                    verdict={verdict}
+                    checkedAt={checkedAt}
+                    style={option}
+                    className={option === "outline" || option === "pill" || option === "terminal" ? "h-6" : "h-5"}
+                  />
+                </div>
+                <p className="mt-2 text-xs font-medium text-foreground">{meta.label}</p>
+                <p className="mt-0.5 text-xs text-muted">{meta.description}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="mb-4 rounded-md border border-border bg-background p-4">
         <p className="font-mono text-xs text-muted">README.md</p>
         <p className="mt-3 text-sm font-medium">my-site</p>
         <p className="mt-1 text-sm text-muted">A short project description.</p>
-        <div className="mt-3">
-          <StaticBadge verdict={verdict} checkedAt={checkedAt} className="h-5" />
+        <div className="mt-3 overflow-x-auto">
+          <StaticBadge
+            verdict={verdict}
+            checkedAt={checkedAt}
+            style={style}
+            className={style === "shield" ? "h-5" : "h-6"}
+          />
         </div>
       </div>
 

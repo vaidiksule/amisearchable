@@ -1,11 +1,11 @@
-import { renderBadgeSvg } from "@/lib/badge-svg";
+import { parseBadgeStyle, renderBadgeSvg } from "@/lib/badge-svg";
 import { getOrCreateCheck } from "@/lib/checks";
 import { normalizeDomain } from "@/lib/domain";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: RouteContext<"/badge/[domain]">,
 ) {
   const raw = decodeURIComponent((await context.params).domain);
@@ -15,8 +15,9 @@ export async function GET(
     return new Response("Invalid domain", { status: 400 });
   }
 
+  const style = parseBadgeStyle(new URL(request.url).searchParams.get("style"));
   const check = await getOrCreateCheck(domain);
-  const svg = renderBadgeSvg(check.verdict, check.checkedAt);
+  const svg = renderBadgeSvg(check.verdict, check.checkedAt, style);
 
   return new Response(svg, {
     headers: {
