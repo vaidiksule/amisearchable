@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { siteUrl } from "@/lib/config";
+import { polarRedirectUrl } from "@/lib/config";
 import { createPolarClient } from "@/lib/polar";
+import { isNextRedirect, logPolarError } from "@/lib/polar-error";
 
 export async function GET() {
   const profile = await getCurrentProfile();
@@ -14,10 +15,16 @@ export async function GET() {
     redirect("/dashboard?error=polar");
   }
 
-  const session = await polar.customerSessions.create({
-    externalCustomerId: profile.id,
-    returnUrl: `${siteUrl()}/dashboard`,
-  });
+  try {
+    const session = await polar.customerSessions.create({
+      externalCustomerId: profile.id,
+      returnUrl: `${polarRedirectUrl()}/dashboard`,
+    });
 
-  redirect(session.customerPortalUrl);
+    redirect(session.customerPortalUrl);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    logPolarError("Polar portal failed", error);
+    redirect("/dashboard?error=portal");
+  }
 }

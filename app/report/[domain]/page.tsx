@@ -147,7 +147,7 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
         <p className="mt-1 text-sm text-muted">Pro re-checks daily and emails you if it changes. $5/mo.</p>
         <Link
           href={`/monitor?domain=${domain}`}
-          className="mt-4 inline-flex h-10 items-center rounded-md bg-foreground px-4 text-sm font-medium text-background hover:bg-stone-800"
+          className="mt-4 inline-flex h-10 items-center rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
         >
           Keep this monitored
         </Link>

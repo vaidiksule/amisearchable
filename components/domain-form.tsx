@@ -31,11 +31,11 @@ export function DomainForm() {
           placeholder="example.com"
           autoComplete="url"
           spellCheck={false}
-          className="h-12 flex-1 rounded-md border border-border bg-surface px-4 font-mono text-sm outline-none placeholder:text-stone-400 focus:border-foreground"
+          className="h-12 flex-1 rounded-md border border-border bg-surface px-4 font-mono text-sm outline-none placeholder:text-muted focus:border-foreground"
         />
         <button
           type="submit"
-          className="h-12 rounded-md bg-foreground px-5 text-sm font-medium text-background hover:bg-stone-800"
+          className="h-12 rounded-md bg-foreground px-5 text-sm font-medium text-background hover:opacity-90"
         >
           Check
         </button>

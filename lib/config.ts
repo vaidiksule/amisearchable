@@ -1,9 +1,27 @@
 export const PRO_DOMAIN_LIMIT = 5;
 export const MIN_RECHECK_MS = 60_000;
 export const EMBED_ORIGIN = "https://amisearchable.cc";
+export const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-440EEFRNG7";
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (configured && !isLocalhost(configured)) return configured;
+  if (process.env.VERCEL_ENV === "production") return EMBED_ORIGIN;
+  return configured ?? "http://localhost:3000";
+}
+
+export function polarRedirectUrl(): string {
+  if (polarServer() === "production") {
+    const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    if (configured && !isLocalhost(configured)) return configured;
+    return EMBED_ORIGIN;
+  }
+  return siteUrl();
+}
+
+function isLocalhost(value: string): boolean {
+  return /localhost|127\.0\.0\.1/.test(value);
 }
 
 export function polarServer(): "sandbox" | "production" {

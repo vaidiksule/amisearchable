@@ -62,7 +62,7 @@ export default function Home() {
             <Link
               key={example.domain}
               href={`/report/${example.domain}`}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400"
+              className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 hover:border-foreground/30"
             >
               <span className="font-mono text-sm">{example.domain}</span>
               <span className="flex items-center gap-3">

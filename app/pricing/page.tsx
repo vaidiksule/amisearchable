@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 export default async function PricingPage(props: PageProps<"/pricing">) {
   const profile = await getCurrentProfile();
   const searchParams = await props.searchParams;
+  const checkoutError = searchParams.error === "checkout";
   const polarError = searchParams.error === "polar";
 
   return (
@@ -20,6 +21,12 @@ export default async function PricingPage(props: PageProps<"/pricing">) {
 
       {polarError ? (
         <p className="mt-6 text-sm text-warn">Polar is not configured yet.</p>
+      ) : null}
+      {checkoutError ? (
+        <p className="mt-6 text-sm text-warn">
+          Checkout failed. On Vercel set NEXT_PUBLIC_SITE_URL to https://amisearchable.cc,
+          POLAR_SERVER=production, and the Polar product IDs.
+        </p>
       ) : null}
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2">

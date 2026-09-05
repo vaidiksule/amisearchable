@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { polarProductId, siteUrl } from "@/lib/config";
+import { polarProductId, polarRedirectUrl } from "@/lib/config";
 import { normalizeDomain } from "@/lib/domain";
 import { createPolarClient } from "@/lib/polar";
+import { isNextRedirect, logPolarError } from "@/lib/polar-error";
 
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
@@ -25,21 +26,29 @@ export async function GET(request: Request) {
     redirect("/pricing?error=polar");
   }
 
-  const checkout = await polar.checkouts.create({
-    products: [productId],
-    customerEmail: profile.email,
-    externalCustomerId: profile.id,
-    successUrl: `${siteUrl()}/dashboard?checkout=success`,
-    returnUrl: `${siteUrl()}/pricing`,
-    metadata: {
-      userId: profile.id,
-      domain: domain ?? "",
-    },
-  });
+  const appUrl = polarRedirectUrl();
 
-  if (!checkout.url) {
-    redirect("/pricing?error=polar");
+  try {
+    const checkout = await polar.checkouts.create({
+      products: [productId],
+      customerEmail: profile.email,
+      externalCustomerId: profile.id,
+      successUrl: `${appUrl}/dashboard?checkout=success&checkout_id={CHECKOUT_ID}`,
+      returnUrl: `${appUrl}/pricing`,
+      metadata: {
+        userId: profile.id,
+        domain: domain ?? "",
+      },
+    });
+
+    if (!checkout.url) {
+      redirect("/pricing?error=checkout");
+    }
+
+    redirect(checkout.url);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    logPolarError("Polar checkout failed", error);
+    redirect("/pricing?error=checkout");
   }
-
-  redirect(checkout.url);
 }

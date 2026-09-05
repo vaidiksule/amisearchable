@@ -15,12 +15,12 @@ export function AddDomainForm() {
           required
           placeholder="example.com"
           spellCheck={false}
-          className="h-11 flex-1 rounded-md border border-border bg-surface px-4 font-mono text-sm outline-none placeholder:text-stone-400 focus:border-foreground"
+          className="h-11 flex-1 rounded-md border border-border bg-surface px-4 font-mono text-sm outline-none placeholder:text-muted focus:border-foreground"
         />
         <button
           type="submit"
           disabled={pending}
-          className="h-11 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:bg-stone-800 disabled:opacity-60"
+          className="h-11 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90 disabled:opacity-60"
         >
           {pending ? "Adding…" : "Add"}
         </button>

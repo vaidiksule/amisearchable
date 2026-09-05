@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function SiteHeader() {
@@ -12,6 +13,7 @@ export async function SiteHeader() {
           amisearchable.cc
         </Link>
         <nav className="flex items-center gap-5 text-sm text-muted">
+          <ThemeToggle />
           <Link href="/pricing" className="hover:text-foreground">
             Pricing
           </Link>

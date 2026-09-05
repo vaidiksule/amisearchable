@@ -58,13 +58,13 @@ export function CopyEmbed({
         </div>
       </div>
 
-      <pre className="overflow-x-auto rounded-md bg-stone-100 p-3 font-mono text-xs leading-6 text-stone-700">
+      <pre className="overflow-x-auto rounded-md bg-code p-3 font-mono text-xs leading-6 text-code-text">
         {snippet}
       </pre>
       <button
         type="button"
         onClick={copy}
-        className="mt-4 h-10 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:bg-stone-800"
+        className="mt-4 h-10 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
       >
         {copied ? "Copied" : "Copy embed code"}
       </button>
