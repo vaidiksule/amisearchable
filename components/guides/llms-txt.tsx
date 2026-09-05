@@ -38,13 +38,13 @@ export function LlmsTxtGuide() {
         <p>
           If you already care about AI search visibility, adding a short llms.txt is cheap
           and easy to keep honest. Ours is at{" "}
-          <Link href="/llms.txt" className="text-foreground underline underline-offset-4">
+          <a href="/llms.txt" className="text-foreground underline underline-offset-4">
             /llms.txt
-          </Link>
+          </a>
           , with a longer version at{" "}
-          <Link href="/llms-full.txt" className="text-foreground underline underline-offset-4">
+          <a href="/llms-full.txt" className="text-foreground underline underline-offset-4">
             /llms-full.txt
-          </Link>
+          </a>
           .
         </p>
       </GuideSection>

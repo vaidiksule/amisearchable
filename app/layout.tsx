@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SiteAnalytics } from "@/components/analytics";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ThemeProvider } from "@/components/theme-provider";
 import { EMBED_ORIGIN } from "@/lib/config";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/lib/seo";
 import "./globals.css";
@@ -53,13 +54,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-        <SiteAnalytics />
+        <ThemeProvider>
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+          <SiteAnalytics />
+        </ThemeProvider>
       </body>
     </html>
   );

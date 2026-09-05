@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { StaticBadge } from "@/components/static-badge";
-import { embedHtml, embedMarkdown } from "@/lib/domain";
+import { embedAgentPrompt, embedHtml, embedMarkdown } from "@/lib/domain";
 
 type Format = "html" | "markdown";
 
@@ -17,7 +17,9 @@ export function CopyEmbed({
 }) {
   const [format, setFormat] = useState<Format>("markdown");
   const [copied, setCopied] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const snippet = format === "html" ? embedHtml(domain) : embedMarkdown(domain);
+  const agentPrompt = embedAgentPrompt(domain);
 
   async function copy() {
     try {
@@ -26,6 +28,16 @@ export function CopyEmbed({
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
       setCopied(false);
+    }
+  }
+
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(agentPrompt);
+      setCopiedPrompt(true);
+      window.setTimeout(() => setCopiedPrompt(false), 1600);
+    } catch {
+      setCopiedPrompt(false);
     }
   }
 
@@ -61,13 +73,25 @@ export function CopyEmbed({
       <pre className="overflow-x-auto rounded-md bg-code p-3 font-mono text-xs leading-6 text-code-text">
         {snippet}
       </pre>
-      <button
-        type="button"
-        onClick={copy}
-        className="mt-4 h-10 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
-      >
-        {copied ? "Copied" : "Copy embed code"}
-      </button>
+      <p className="mt-3 text-xs text-muted">
+        Paste this into Cursor or Claude Code and it will add the badge for you.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={copy}
+          className="h-10 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
+        >
+          {copied ? "Copied" : "Copy embed code"}
+        </button>
+        <button
+          type="button"
+          onClick={copyPrompt}
+          className="h-10 rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-surface"
+        >
+          {copiedPrompt ? "Copied" : "Copy prompt for Cursor / Claude Code"}
+        </button>
+      </div>
     </section>
   );
 }

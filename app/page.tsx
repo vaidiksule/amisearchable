@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-6">
+    <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
       <JsonLd
         data={[
           {
@@ -69,11 +69,11 @@ export default function Home() {
         ]}
       />
 
-      <section className="pt-14 pb-10">
-        <h1 className="text-4xl font-semibold tracking-tight">
+      <section className="pt-10 pb-10 sm:pt-14">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Is your site visible to AI search?
         </h1>
-        <p className="mt-4 max-w-xl text-muted">
+        <p className="mt-4 max-w-xl text-sm leading-6 text-muted sm:text-base">
           Check in 5 seconds. This AI crawler checker reads robots.txt to see if GPTBot,
           ChatGPT-User, and PerplexityBot can access your site — then gives you a badge for
           your README.
@@ -83,7 +83,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-t border-border py-14">
+      <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">The badge</h2>
         <p className="mt-2 text-sm text-muted">
           Drop it in a README or footer. It shows whether search bots can cite you.
@@ -92,14 +92,14 @@ export default function Home() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-border bg-surface p-5">
             <p className="text-xs text-muted">Pass</p>
-            <div className="mt-3">
+            <div className="mt-3 overflow-x-auto">
               <StaticBadge verdict="pass" className="h-6" />
             </div>
             <p className="mt-3 text-sm">AI-Search Ready</p>
           </div>
           <div className="rounded-lg border border-border bg-surface p-5">
             <p className="text-xs text-muted">Fail</p>
-            <div className="mt-3">
+            <div className="mt-3 overflow-x-auto">
               <StaticBadge verdict="fail" className="h-6" />
             </div>
             <p className="mt-3 text-sm">Blocking AI Search</p>
@@ -110,37 +110,37 @@ export default function Home() {
           <p className="font-mono text-xs text-muted">README.md</p>
           <p className="mt-3 text-sm font-medium">your-project</p>
           <p className="mt-1 text-sm text-muted">What it looks like on GitHub.</p>
-          <div className="mt-3">
+          <div className="mt-3 overflow-x-auto">
             <StaticBadge verdict="pass" className="h-5" />
           </div>
         </div>
       </section>
 
-      <section className="border-t border-border py-14">
+      <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">Live examples</h2>
         <div className="mt-4 space-y-3">
           {EXAMPLES.map((example) => (
             <Link
               key={example.domain}
               href={`/report/${example.domain}`}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400"
+              className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400 sm:flex-row sm:items-center sm:justify-between"
             >
-              <span className="font-mono text-sm">{example.domain}</span>
-              <span className="flex items-center gap-3">
-                <span className="text-xs text-muted">{example.note}</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/badge/${example.domain}`}
-                  alt={embedAlt(example.domain)}
-                  className="h-5"
-                />
-              </span>
+              <div className="min-w-0">
+                <p className="truncate font-mono text-sm">{example.domain}</p>
+                <p className="mt-1 text-xs text-muted">{example.note}</p>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/badge/${example.domain}`}
+                alt={embedAlt(example.domain)}
+                className="h-5 w-auto max-w-full self-start sm:self-center"
+              />
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="border-t border-border py-14">
+      <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">What we check</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           Search bots only: OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot,
@@ -150,14 +150,14 @@ export default function Home() {
             Why that split matters
           </Link>
           . This site publishes{" "}
-          <Link href="/llms.txt" className="text-foreground underline underline-offset-4">
+          <a href="/llms.txt" className="text-foreground underline underline-offset-4">
             its own llms.txt
-          </Link>
+          </a>
           .
         </p>
       </section>
 
-      <section className="border-t border-border py-14">
+      <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">Guides</h2>
         <p className="mt-2 text-sm text-muted">
           AI search visibility, crawler access, and llms.txt — written for the terms people
@@ -180,7 +180,7 @@ export default function Home() {
         </Link>
       </section>
 
-      <section className="border-t border-border py-14">
+      <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">FAQ</h2>
         <dl className="mt-6 space-y-6">
           {HOME_FAQS.map((faq) => (
@@ -198,7 +198,7 @@ export default function Home() {
         </dl>
       </section>
 
-      <section className="border-t border-border py-14">
+      <section className="border-t border-border py-10 sm:py-14">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted">
             Badge is free. Pro is $5/mo to keep it fresh.

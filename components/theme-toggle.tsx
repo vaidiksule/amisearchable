@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -17,8 +17,9 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
+      disabled={!mounted}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="rounded-md p-1.5 text-muted hover:text-foreground"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-border/40 hover:text-foreground disabled:opacity-50"
     >
       {isDark ? (
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">

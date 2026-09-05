@@ -47,3 +47,21 @@ export function embedMarkdown(domain: string): string {
   const alt = embedAlt(domain);
   return `[![${alt}](${EMBED_ORIGIN}/badge/${domain})](${EMBED_ORIGIN}/report/${domain})`;
 }
+
+export function embedAgentPrompt(domain: string): string {
+  return `Add this AI-Searchable badge to my project.
+
+If this is a GitHub repository, add it to README.md near the top,
+in the same line as other badges (build status, license, etc.) if any exist.
+Use this exact markdown, don't modify the URL:
+
+${embedMarkdown(domain)}
+
+If this is a website codebase, add it to the site footer component
+so it appears on every page. Use this exact HTML, don't modify the URL:
+
+${embedHtml(domain)}
+
+Don't change any other content — just insert this badge in the
+appropriate location.`;
+}

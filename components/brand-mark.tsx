@@ -46,10 +46,12 @@ export function BrandMark({ className, title = "amisearchable", arc = "light" }:
 
 export function BrandLogo({ className }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className ?? ""}`}>
+    <span className={`inline-flex min-w-0 items-center gap-2 ${className ?? ""}`}>
       <BrandMark className="h-6 w-6 shrink-0" />
       <span className="font-mono text-sm text-foreground">
-        amisearchable<span className="text-muted">.cc</span>
+        <span className="hidden min-[420px]:inline">amisearchable</span>
+        <span className="min-[420px]:hidden">ami</span>
+        <span className="text-muted">.cc</span>
       </span>
     </span>
   );

@@ -42,13 +42,13 @@ export function LlmsTxtVsRobotsTxtGuide() {
         </p>
         <p>
           amisearchable.cc ships both on purpose:{" "}
-          <Link href="/robots.txt" className="text-foreground underline underline-offset-4">
+          <a href="/robots.txt" className="text-foreground underline underline-offset-4">
             /robots.txt
-          </Link>{" "}
+          </a>{" "}
           allows AI crawlers, and{" "}
-          <Link href="/llms.txt" className="text-foreground underline underline-offset-4">
+          <a href="/llms.txt" className="text-foreground underline underline-offset-4">
             /llms.txt
-          </Link>{" "}
+          </a>{" "}
           describes the product. The checker reports both because people conflate them.
         </p>
       </GuideSection>
