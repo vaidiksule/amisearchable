@@ -27,8 +27,10 @@ export default async function PricingPage(props: PageProps<"/pricing">) {
       ) : null}
       {checkoutError ? (
         <p className="mt-6 text-sm text-warn">
-          Checkout failed. On Vercel set NEXT_PUBLIC_SITE_URL to https://amisearchable.cc,
-          POLAR_SERVER=production, and the Polar product IDs.
+          Checkout failed. In Polar, create a new organization access token with{" "}
+          <span className="font-mono">checkouts:write</span> and{" "}
+          <span className="font-mono">customer_sessions:write</span>, then put it in Vercel as{" "}
+          <span className="font-mono">POLAR_ACCESS_TOKEN</span>.
         </p>
       ) : null}
 
