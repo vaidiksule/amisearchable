@@ -29,6 +29,6 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${EMBED_ORIGIN}/sitemap.xml`,
-    host: EMBED_ORIGIN,
+    host: "amisearchable.cc",
   };
 }

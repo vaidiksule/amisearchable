@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
+import { BrandLogo } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -9,8 +10,8 @@ export async function SiteHeader() {
   return (
     <header className="border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between px-6">
-        <Link href="/" className="font-mono text-sm text-foreground">
-          amisearchable.cc
+        <Link href="/" className="hover:opacity-90">
+          <BrandLogo />
         </Link>
         <nav className="flex items-center gap-5 text-sm text-muted">
           <ThemeToggle />
