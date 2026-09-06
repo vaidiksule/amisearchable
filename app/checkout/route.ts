@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { polarProductId, polarRedirectUrl } from "@/lib/config";
+import { polarProductId, polarRedirectUrl, polarServer } from "@/lib/config";
 import { normalizeDomain } from "@/lib/domain";
 import { createPolarClient } from "@/lib/polar";
-import { isNextRedirect, logPolarError } from "@/lib/polar-error";
+import { isNextRedirect, logPolarError, polarFailureReason } from "@/lib/polar-error";
 
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
@@ -23,6 +23,12 @@ export async function GET(request: Request) {
   const productId = polarProductId(interval);
   const polar = createPolarClient();
   if (!polar || !productId) {
+    console.error("Polar misconfigured", {
+      hasClient: Boolean(polar),
+      productId,
+      interval,
+      server: polarServer(),
+    });
     redirect("/pricing?error=polar");
   }
 
@@ -49,6 +55,6 @@ export async function GET(request: Request) {
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     logPolarError("Polar checkout failed", error);
-    redirect("/pricing?error=checkout");
+    redirect(`/pricing?error=${polarFailureReason(error)}`);
   }
 }
