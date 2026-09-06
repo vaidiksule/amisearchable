@@ -1,5 +1,11 @@
 import type { Verdict } from "@/lib/crawlers";
 import {
+  iconifyGlyph,
+  metricIconify,
+  platformIconify,
+  type IconifyId,
+} from "@/lib/iconify";
+import {
   PLATFORM_LABELS,
   PLATFORMS,
   type Platform,
@@ -28,7 +34,7 @@ export const BADGE_SHOW_FIELDS = ["ready", "score", "age", "cited"] as const;
 export type BadgeShowField = (typeof BADGE_SHOW_FIELDS)[number];
 
 /** Bump when badge artwork changes so browsers/CDNs drop stale SVGs. */
-export const BADGE_ASSET_VERSION = "10";
+export const BADGE_ASSET_VERSION = "12";
 
 export const BADGE_SHOW_LABELS: Record<BadgeShowField, string> = {
   ready: "Ready",
@@ -162,6 +168,7 @@ type CompositeLine = {
   tone: Tone;
   overall?: boolean;
   score?: number;
+  icon: IconifyId;
 };
 
 function compositeLines(model: CompositeBadgeModel): CompositeLine[] {
@@ -182,6 +189,7 @@ function compositeLines(model: CompositeBadgeModel): CompositeLine[] {
       tone: toneFrom(model.overallVerdict),
       overall: true,
       score: model.overallScore,
+      icon: metricIconify("overall"),
     });
   }
 
@@ -201,6 +209,7 @@ function compositeLines(model: CompositeBadgeModel): CompositeLine[] {
           ? ("pending" as Tone)
           : toneFrom(row.verdict),
       score: row.score,
+      icon: platformIconify(row.id),
     });
   }
 
@@ -211,6 +220,7 @@ function compositeLines(model: CompositeBadgeModel): CompositeLine[] {
       tone: "pending",
       overall: true,
       score: 0,
+      icon: metricIconify("overall"),
     });
   }
   return lines;
@@ -235,13 +245,13 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
       bodyParts.push(`
   <g transform="translate(0 ${y})">
     <rect x="0.5" y="0.5" width="${width - 1}" height="${boxH - 1}" rx="5" fill="none" stroke="#161412" stroke-width="1.5"/>
-    <g transform="translate(${borderPad} ${borderPad})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth)}</g>
+    <g transform="translate(${borderPad} ${borderPad})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth, line.icon)}</g>
   </g>`);
       y += boxH + gap;
     } else {
       const x = hasOverall ? borderPad : 0;
       bodyParts.push(
-        `<g transform="translate(${x} ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth)}</g>`,
+        `<g transform="translate(${x} ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth, line.icon)}</g>`,
       );
       y += rowH + gap;
     }
@@ -256,45 +266,36 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
 </svg>`;
 }
 
-/** Inline — same shields in one horizontal row (distinct from classic stack). */
+/** Inline — same-height shields in one row; overall uses a left accent, not a taller border box. */
 function renderCompactComposite(model: CompositeBadgeModel): string {
   const lines = compositeLines(model);
-  const gap = 6;
+  const gap = 8;
   const rowH = 20;
-  const borderPad = 3;
   const parts = lines.map((line) => measureShield(line.label, line.status || "—"));
-  const hasOverall = lines.some((line) => line.overall);
 
   let x = 0;
   const bodyParts: string[] = [];
-  let maxH = rowH;
 
   lines.forEach((line, index) => {
     const w = parts[index]!.width;
     if (line.overall) {
-      const boxW = w + borderPad * 2;
-      const boxH = rowH + borderPad * 2;
-      maxH = Math.max(maxH, boxH);
       bodyParts.push(`
   <g transform="translate(${x} 0)">
-    <rect x="0.5" y="0.5" width="${boxW - 1}" height="${boxH - 1}" rx="10" fill="none" stroke="#161412" stroke-width="1.5"/>
-    <g transform="translate(${borderPad} ${borderPad})">${shieldBadgeInner(line.label, line.status || "—", line.tone, w)}</g>
+    ${shieldBadgeInner(line.label, line.status || "—", line.tone, w, line.icon)}
+    <rect x="0" y="0" width="3" height="${rowH}" fill="#161412"/>
   </g>`);
-      x += boxW + gap;
     } else {
-      const y = hasOverall ? borderPad : 0;
       bodyParts.push(
-        `<g transform="translate(${x} ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, w)}</g>`,
+        `<g transform="translate(${x} 0)">${shieldBadgeInner(line.label, line.status || "—", line.tone, w, line.icon)}</g>`,
       );
-      x += w + gap;
-      maxH = Math.max(maxH, y + rowH);
     }
+    x += w + gap;
   });
 
   const width = Math.max(rowH, x - gap);
   const aria = lines.map((line) => `${line.label}: ${line.status}`).join("; ");
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${maxH}" role="img" aria-label="${escapeXml(aria)}">
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${rowH}" role="img" aria-label="${escapeXml(aria)}">
   <title>${escapeXml(aria)}</title>
   ${bodyParts.join("\n")}
 </svg>`;
@@ -316,9 +317,11 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
     tone: Tone;
     overall: boolean;
     score: number;
+    icon: IconifyId;
     labelW: number;
     pillW: number;
   };
+  const iconSlot = 16;
   const cells: Cell[] = lines.map((line) => {
     const scoreOnly =
       show.includes("score") &&
@@ -327,7 +330,7 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
       !show.includes("cited");
     const pill = scoreOnly ? `${line.score ?? 0}/100` : line.status || "—";
     const label = line.overall ? "Overall" : line.label;
-    const labelW = Math.round(Math.max(40, label.length * 7.6));
+    const labelW = Math.round(Math.max(40, label.length * 7.6)) + iconSlot;
     const pillW = Math.round(Math.max(48, pill.length * 6.8 + 20));
     return {
       label,
@@ -335,6 +338,7 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
       tone: line.tone,
       overall: Boolean(line.overall),
       score: line.score ?? 0,
+      icon: line.icon,
       labelW,
       pillW,
     };
@@ -349,7 +353,8 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
   const parts: string[] = [];
   cells.forEach((cell, index) => {
     const cy = height / 2 + 0.5;
-    const labelX = cursor;
+    const iconX = cursor;
+    const labelX = cursor + iconSlot;
     const pillX = cursor + cell.labelW + 10;
     const pillY = (height - pillH) / 2;
     const fill = scorePillFill(cell.score, cell.tone);
@@ -357,6 +362,7 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
       ? `stroke="#1c1917" stroke-width="1.5"`
       : `stroke="${fill.ring}" stroke-width="1"`;
     parts.push(`
+  ${iconifyGlyph(cell.icon, { size: 13, color: "#1c1917", x: iconX, y: cy - 6.5 })}
   <text x="${labelX}" y="${cy + 4}" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="650" letter-spacing="-0.01em" fill="#1c1917">${escapeXml(cell.label)}</text>
   <rect x="${pillX}" y="${pillY}" width="${cell.pillW}" height="${pillH}" rx="${pillH / 2}" fill="${fill.bg}" ${overallStroke}/>
   <text x="${pillX + cell.pillW / 2}" y="${cy + 4}" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" fill="${fill.fg}">${escapeXml(cell.pill)}</text>`);
@@ -403,7 +409,7 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
   const padX = 12;
   const headerH = showOverall ? 28 : 0;
   const height = (showOverall ? headerH : 8) + (rows.length > 0 ? 6 + rows.length * rowH + 6 : 6);
-  const labelCol = Math.max(64, ...rows.map((row) => shortEngine(row.id).length * 7 + 4), 72);
+  const labelCol = Math.max(72, ...rows.map((row) => shortEngine(row.id).length * 7 + 22), 80);
   const metricsWidth = Math.max(
     100,
     headerRight.length * 6.5 + 12,
@@ -436,7 +442,8 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
         Boolean(row.comingSoon),
       ).join(" · ");
       return `
-  <text x="${padX}" y="${y}" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e7e5e4">${escapeXml(shortEngine(row.id))}</text>
+  ${iconifyGlyph(platformIconify(row.id), { size: 11, color: "#e7e5e4", x: padX, y: y - 9 })}
+  <text x="${padX + 16}" y="${y}" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e7e5e4">${escapeXml(shortEngine(row.id))}</text>
   <text x="${padX + labelCol + 12}" y="${y}" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="${toneColors(toneFrom(row.verdict)).fg}">${escapeXml(metrics)}</text>`;
     })
     .join("");
@@ -444,7 +451,8 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
   const overallBlock = showOverall
     ? `
   <rect x="6" y="4" width="${width - 12}" height="22" rx="4" fill="none" stroke="#a8a29e" stroke-width="1"/>
-  <text x="${padX}" y="19" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="600" fill="#fafaf9">ai search</text>
+  ${iconifyGlyph(metricIconify("overall"), { size: 11, color: "#fafaf9", x: padX, y: 8 })}
+  <text x="${padX + 16}" y="19" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="600" fill="#fafaf9">ai search</text>
   <text x="${width - padX}" y="19" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="${colors.fg}">${escapeXml(headerRight)}</text>`
     : "";
 
@@ -486,7 +494,13 @@ function measureShield(label: string, status: string): { width: number; labelWid
   return { width: labelWidth + statusWidth, labelWidth, statusWidth };
 }
 
-function shieldBadgeInner(label: string, status: string, tone: Tone, totalWidth: number): string {
+function shieldBadgeInner(
+  label: string,
+  status: string,
+  tone: Tone,
+  totalWidth: number,
+  icon: IconifyId = metricIconify("ready"),
+): string {
   const colors = {
     ready: "#16a34a",
     blocked: "#dc2626",
@@ -508,14 +522,8 @@ function shieldBadgeInner(label: string, status: string, tone: Tone, totalWidth:
   const markX = markPad;
   const markY = (20 - markSize) / 2;
   const textX = markBlock + (labelWidth - markBlock) / 2;
-  const markIcon =
-    tone === "blocked"
-      ? `<path d="M4.2 4.2 L9.8 9.8 M9.8 4.2 L4.2 9.8" stroke="#450a0a" stroke-width="1.7" stroke-linecap="round"/>`
-      : tone === "unclear"
-        ? `<circle cx="7" cy="7" r="2.4" fill="#713f12"/>`
-        : tone === "pending"
-          ? `<path d="M4 7 H10" stroke="#1c1917" stroke-width="1.7" stroke-linecap="round"/>`
-          : `<path d="M3.5 7.2 L6 9.6 L10.6 4.4" stroke="#0B0D10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+  const glyphColor = tone === "unclear" ? "#713f12" : "#0B0D10";
+  const markIcon = iconifyGlyph(icon, { size: 10, color: glyphColor, x: 2, y: 2 });
 
   return `
   <rect rx="3" width="${totalWidth}" height="20" fill="#3f3f46"/>
@@ -535,6 +543,16 @@ export function renderBadgeSvg(model: BadgeModel): string {
   const style = model.style ?? "shield";
   const view = model.view ?? "ready";
   const { label, value, tone } = resolveBadgeCopy(model, view);
+  const icon =
+    model.engine && model.engine !== "all"
+      ? platformIconify(model.engine)
+      : view === "score"
+        ? metricIconify("score")
+        : view === "age"
+          ? metricIconify("age")
+          : view === "cited"
+            ? metricIconify("cited")
+            : metricIconify("ready");
 
   switch (style) {
     case "pill":
@@ -544,7 +562,7 @@ export function renderBadgeSvg(model: BadgeModel): string {
     case "outline":
       return outlineBadge(label, value, tone);
     default:
-      return shieldBadge(label, value, tone);
+      return shieldBadge(label, value, tone, icon);
   }
 }
 
@@ -668,7 +686,12 @@ function toneIcon(tone: Tone): string {
   return "✓";
 }
 
-function shieldBadge(label: string, status: string, tone: Tone): string {
+function shieldBadge(
+  label: string,
+  status: string,
+  tone: Tone,
+  icon: IconifyId = metricIconify("ready"),
+): string {
   const colors = {
     ready: "#16a34a",
     blocked: "#dc2626",
@@ -690,14 +713,8 @@ function shieldBadge(label: string, status: string, tone: Tone): string {
   const markX = markPad;
   const markY = (20 - markSize) / 2;
   const textX = markBlock + (labelWidth - markBlock) / 2;
-  const markIcon =
-    tone === "blocked"
-      ? `<path d="M4.2 4.2 L9.8 9.8 M9.8 4.2 L4.2 9.8" stroke="#450a0a" stroke-width="1.7" stroke-linecap="round"/>`
-      : tone === "unclear"
-        ? `<circle cx="7" cy="7" r="2.4" fill="#713f12"/>`
-        : tone === "pending"
-          ? `<path d="M4 7 H10" stroke="#1c1917" stroke-width="1.7" stroke-linecap="round"/>`
-          : `<path d="M3.5 7.2 L6 9.6 L10.6 4.4" stroke="#0B0D10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+  const glyphColor = tone === "unclear" ? "#713f12" : "#0B0D10";
+  const markIcon = iconifyGlyph(icon, { size: 10, color: glyphColor, x: 2, y: 2 });
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${escapeXml(label)}: ${escapeXml(status)}">

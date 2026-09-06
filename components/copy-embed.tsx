@@ -27,7 +27,36 @@ import {
   isCitationComingSoon,
   type Platform,
 } from "@/lib/platforms";
+import {
+  iconifyCdnUrl,
+  metricIconify,
+  platformIconify,
+} from "@/lib/iconify";
 import type { ScoreBreakdown } from "@/lib/score";
+
+function IconifyImg({
+  id,
+  className,
+}: {
+  id: string;
+  className?: string;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={iconifyCdnUrl(id as `${string}:${string}`, {
+        color: "#44403c",
+        width: 14,
+        height: 14,
+      })}
+      alt=""
+      width={14}
+      height={14}
+      className={className ?? "h-3.5 w-3.5 shrink-0 opacity-80"}
+      loading="lazy"
+    />
+  );
+}
 
 type Format = "html" | "markdown";
 
@@ -119,7 +148,7 @@ export function CopyEmbed({
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 1 · Engines
               </p>
-              <ul className="mt-2 divide-y divide-border">
+              <ul className="mt-2">
                 {PLATFORMS_UI_ORDER.map((platform) => {
                   const soon = isCitationComingSoon(platform);
                   const checked = engines.includes(platform);
@@ -130,7 +159,8 @@ export function CopyEmbed({
                           soon ? "cursor-not-allowed opacity-55" : "cursor-pointer"
                         }`}
                       >
-                        <span className={soon ? "text-muted" : "text-foreground"}>
+                        <span className={`flex items-center gap-2 ${soon ? "text-muted" : "text-foreground"}`}>
+                          <IconifyImg id={platformIconify(platform)} />
                           {PLATFORM_LABELS[platform]}
                           {soon ? " · soon" : null}
                         </span>
@@ -154,7 +184,7 @@ export function CopyEmbed({
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 2 · Show
               </p>
-              <ul className="mt-2 divide-y divide-border">
+              <ul className="mt-2">
                 <li>
                   <label
                     className={`flex items-center justify-between gap-2 py-2 text-sm ${
@@ -163,7 +193,8 @@ export function CopyEmbed({
                         : "cursor-pointer"
                     }`}
                   >
-                    <span title="Site-wide crawl score (bordered capsule)">
+                    <span title="Site-wide crawl score (bordered capsule)" className="flex items-center gap-2">
+                      <IconifyImg id={metricIconify("overall")} />
                       Overall summary
                     </span>
                     <input
@@ -178,7 +209,10 @@ export function CopyEmbed({
                 {BADGE_SHOW_FIELDS.map((field) => (
                   <li key={field}>
                     <label className="flex cursor-pointer items-center justify-between gap-2 py-2 text-sm">
-                      <span>{BADGE_SHOW_LABELS[field]}</span>
+                      <span className="flex items-center gap-2">
+                        <IconifyImg id={metricIconify(field)} />
+                        {BADGE_SHOW_LABELS[field]}
+                      </span>
                       <input
                         type="checkbox"
                         checked={show.includes(field)}
@@ -221,9 +255,9 @@ export function CopyEmbed({
           </div>
 
           <p className="mt-3 text-xs text-muted">
-            Classic stacks; Inline is a horizontal row; Round pills is one soft
-            bar with score chips. Overall (when on) uses a bordered chip and the
-            full crawl score — engines stay bot-access only.
+            Classic stacks; Inline is a same-height row (overall gets a left accent
+            bar); Round pills is one soft bar with score chips. Engines stay
+            bot-access only — overall is the full crawl score.
           </p>
         </div>
       </div>

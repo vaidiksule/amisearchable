@@ -134,6 +134,32 @@ export async function monitoringEmails(hostname: string): Promise<string[]> {
     .filter((value): value is string => Boolean(value));
 }
 
+/** True when this Pro user has the hostname on their monitor list. */
+export async function userMonitorsHostname(
+  userId: string,
+  hostname: string,
+): Promise<boolean> {
+  const admin = createAdminClient();
+  if (!admin) return false;
+
+  const { data: domainRow } = await admin
+    .from("domains")
+    .select("id")
+    .eq("hostname", hostname)
+    .maybeSingle();
+
+  if (!domainRow) return false;
+
+  const { data } = await admin
+    .from("monitors")
+    .select("domain_id")
+    .eq("user_id", userId)
+    .eq("domain_id", domainRow.id)
+    .maybeSingle();
+
+  return Boolean(data);
+}
+
 function nestedHostname(value: unknown): string | null {
   if (!value) return null;
   if (Array.isArray(value)) {

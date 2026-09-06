@@ -3,11 +3,15 @@ import Link from "next/link";
 import { CopyEmbed } from "@/components/copy-embed";
 import { JsonLd } from "@/components/json-ld";
 import { PageFrame } from "@/components/page-frame";
+import { ProbeCitationsButton } from "@/components/probe-citations-button";
 import { badgeDataUri, badgeLabel } from "@/lib/badge-svg";
+import { getCurrentProfile } from "@/lib/auth";
 import { getLatestCitations } from "@/lib/citations/store";
 import { getLatestCheck, getOrCreateCheck } from "@/lib/checks";
 import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
 import { normalizeDomain } from "@/lib/domain";
+import { iconifyCdnUrl, platformIconify } from "@/lib/iconify";
+import { userMonitorsHostname } from "@/lib/monitors";
 import {
   PLATFORM_LABELS,
   PLATFORMS_UI_ORDER,
@@ -155,6 +159,9 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
   const result = await getOrCreateCheck(domain, { fresh });
   const score = scoreFromCheck(result);
   const citations = await getLatestCitations(domain);
+  const profile = await getCurrentProfile();
+  const canProbeCitations =
+    profile?.plan === "pro" && (await userMonitorsHostname(profile.id, domain));
   const verdictTone = result.verdict === "pass" ? "text-accent" : "text-warn";
   const verdictTitle =
     result.verdict === "pass"
@@ -260,7 +267,19 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
                 key={platform}
                 className="rounded-lg border border-border bg-surface px-4 py-3"
               >
-                <p className="text-xs uppercase tracking-wide text-muted">
+                <p className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={iconifyCdnUrl(platformIconify(platform), {
+                      color: "#57534e",
+                      width: 14,
+                      height: 14,
+                    })}
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="h-3.5 w-3.5 opacity-80"
+                  />
                   {PLATFORM_LABELS[platform]}
                   {comingSoon ? " · coming soon" : null}
                 </p>
@@ -284,7 +303,7 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
                     <p className="mt-2 text-xs text-muted">
                       {cite && !cite.skipped && cite.probes > 0
                         ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
-                        : "Citations: not probed yet (weekly job for Pro-monitored domains)"}
+                        : "Citations: not probed yet"}
                     </p>
                   </>
                 )}
@@ -292,6 +311,7 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
             );
           })}
         </div>
+        {canProbeCitations ? <ProbeCitationsButton domain={domain} /> : null}
       </section>
 
       <section className="mt-8">
