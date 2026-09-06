@@ -33,6 +33,8 @@ export async function GET(request: Request) {
   }
 
   const appUrl = polarRedirectUrl();
+  const metadata: Record<string, string> = { userId: profile.id };
+  if (domain) metadata.domain = domain;
 
   try {
     const checkout = await polar.checkouts.create({
@@ -41,10 +43,7 @@ export async function GET(request: Request) {
       externalCustomerId: profile.id,
       successUrl: `${appUrl}/dashboard?checkout=success&checkout_id={CHECKOUT_ID}`,
       returnUrl: `${appUrl}/pricing`,
-      metadata: {
-        userId: profile.id,
-        domain: domain ?? "",
-      },
+      metadata,
     });
 
     if (!checkout.url) {
@@ -55,6 +54,12 @@ export async function GET(request: Request) {
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     logPolarError("Polar checkout failed", error);
+    console.error("Polar checkout context", {
+      interval,
+      productId,
+      server: polarServer(),
+      hasDomain: Boolean(domain),
+    });
     redirect(`/pricing?error=${polarFailureReason(error)}`);
   }
 }

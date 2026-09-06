@@ -29,10 +29,12 @@ export function polarServer(): "sandbox" | "production" {
 }
 
 export function polarProductId(interval: "month" | "year"): string | null {
-  if (interval === "year") {
-    return process.env.POLAR_PRODUCT_ANNUAL_ID ?? process.env.POLAR_PRODUCT_ID ?? null;
-  }
-  return process.env.POLAR_PRODUCT_MONTHLY_ID ?? process.env.POLAR_PRODUCT_ID ?? null;
+  const raw =
+    interval === "year"
+      ? (process.env.POLAR_PRODUCT_ANNUAL_ID ?? process.env.POLAR_PRODUCT_ID)
+      : (process.env.POLAR_PRODUCT_MONTHLY_ID ?? process.env.POLAR_PRODUCT_ID);
+  const id = raw?.trim();
+  return id || null;
 }
 
 export function isSupabaseConfigured(): boolean {
