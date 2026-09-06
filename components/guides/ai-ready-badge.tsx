@@ -56,11 +56,24 @@ export function AiReadyBadgeGuide() {
         </p>
       </GuideSection>
 
+      <GuideSection title="Customize the badge">
+        <p>
+          On the report page, pick what the badge shows: ready/blocked, crawl score
+          (0–100), last searched, or citation hits when probes have run. You can also
+          scope the badge to ChatGPT, Claude, Perplexity, or Gemini. Query params:
+          <code className="font-mono text-foreground">?view=score</code>,{" "}
+          <code className="font-mono text-foreground">?view=age</code>,{" "}
+          <code className="font-mono text-foreground">?view=cited</code>,{" "}
+          <code className="font-mono text-foreground">?engine=chatgpt</code>.
+        </p>
+      </GuideSection>
+
       <GuideSection title="What “ready” means">
         <p>
           Ready means a valid robots.txt exists and search/fetch bots are not blocked. No
-          robots.txt (or an HTML soft-404) is unclear — yellow — not green. Training
-          crawlers can still be blocked without failing the badge.{" "}
+          robots.txt (or an HTML soft-404) is unclear — yellow — not green. The score is
+          crawl readiness only (robots, bots, sitemap, llms.txt). Citation probes are a
+          separate strip (“cited in N/M”) for monitored domains.{" "}
           <Link href="/guides/gptbot-vs-chatgpt-user" className="text-foreground underline underline-offset-4">
             Read the bot split
           </Link>

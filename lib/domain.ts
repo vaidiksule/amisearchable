@@ -1,7 +1,20 @@
-import { BADGE_ASSET_VERSION, type BadgeStyle } from "@/lib/badge-svg";
+import {
+  BADGE_ASSET_VERSION,
+  type BadgeStyle,
+  type BadgeView,
+} from "@/lib/badge-svg";
 import { EMBED_ORIGIN } from "@/lib/config";
+import type { Platform } from "@/lib/platforms";
 
 const BLOCKED_HOSTS = new Set(["localhost", "metadata.google.internal"]);
+
+export type BadgeEmbedOptions = {
+  style?: BadgeStyle;
+  view?: BadgeView;
+  engine?: Platform | "all";
+  origin?: string;
+  bust?: string;
+};
 
 export function normalizeDomain(input: string): string | null {
   const trimmed = input.trim().toLowerCase();
@@ -38,16 +51,14 @@ export function embedAlt(domain: string): string {
   return `AI Searchable — AI crawler access badge for ${domain}`;
 }
 
-export function badgeSrc(
-  domain: string,
-  style: BadgeStyle = "shield",
-  opts?: { origin?: string; bust?: string },
-): string {
-  const origin = opts?.origin ?? EMBED_ORIGIN;
+export function badgeSrc(domain: string, opts: BadgeEmbedOptions = {}): string {
+  const origin = opts.origin ?? EMBED_ORIGIN;
   const params = new URLSearchParams();
   params.set("v", BADGE_ASSET_VERSION);
-  if (style !== "shield") params.set("style", style);
-  if (opts?.bust) params.set("t", opts.bust);
+  if (opts.style && opts.style !== "shield") params.set("style", opts.style);
+  if (opts.view && opts.view !== "ready") params.set("view", opts.view);
+  if (opts.engine && opts.engine !== "all") params.set("engine", opts.engine);
+  if (opts.bust) params.set("t", opts.bust);
   return `${origin}/badge/${domain}?${params.toString()}`;
 }
 
@@ -57,33 +68,33 @@ export function localBadgeSrc(
   style: BadgeStyle = "shield",
   bust?: string,
 ): string {
-  return badgeSrc(domain, style, { origin: "", bust });
+  return badgeSrc(domain, { origin: "", style, bust });
 }
 
-export function embedHtml(domain: string, style: BadgeStyle = "shield"): string {
+export function embedHtml(domain: string, opts: BadgeEmbedOptions = {}): string {
   return `<a href="${EMBED_ORIGIN}/report/${domain}">
-  <img src="${badgeSrc(domain, style)}" alt="${embedAlt(domain)}">
+  <img src="${badgeSrc(domain, opts)}" alt="${embedAlt(domain)}">
 </a>`;
 }
 
-export function embedMarkdown(domain: string, style: BadgeStyle = "shield"): string {
+export function embedMarkdown(domain: string, opts: BadgeEmbedOptions = {}): string {
   const alt = embedAlt(domain);
-  return `[![${alt}](${badgeSrc(domain, style)})](${EMBED_ORIGIN}/report/${domain})`;
+  return `[![${alt}](${badgeSrc(domain, opts)})](${EMBED_ORIGIN}/report/${domain})`;
 }
 
-export function embedAgentPrompt(domain: string, style: BadgeStyle = "shield"): string {
+export function embedAgentPrompt(domain: string, opts: BadgeEmbedOptions = {}): string {
   return `Add this AI-Searchable badge to my project.
 
 If this is a GitHub repository, add it to README.md near the top,
 in the same line as other badges (build status, license, etc.) if any exist.
 Use this exact markdown, don't modify the URL:
 
-${embedMarkdown(domain, style)}
+${embedMarkdown(domain, opts)}
 
 If this is a website codebase, add it to the site footer component
 so it appears on every page. Use this exact HTML, don't modify the URL:
 
-${embedHtml(domain, style)}
+${embedHtml(domain, opts)}
 
 Don't change any other content — just insert this badge in the
 appropriate location.`;

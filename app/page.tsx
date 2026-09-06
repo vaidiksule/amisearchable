@@ -127,9 +127,9 @@ export default function Home() {
         <h2 className="text-sm font-medium">Styles</h2>
         <div className="mt-4 flex flex-wrap gap-3">
           <StaticBadge verdict="pass" className="h-5" />
+          <StaticBadge verdict="pass" view="score" score={72} className="h-5" />
+          <StaticBadge verdict="pass" view="age" checkedAt={new Date().toISOString()} className="h-5" />
           <StaticBadge verdict="pass" style="pill" className="h-6" />
-          <StaticBadge verdict="pass" style="terminal" className="h-6" />
-          <StaticBadge verdict="pass" style="outline" className="h-6" />
         </div>
       </section>
 

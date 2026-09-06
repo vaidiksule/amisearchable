@@ -4,9 +4,17 @@ import { CopyEmbed } from "@/components/copy-embed";
 import { JsonLd } from "@/components/json-ld";
 import { PageFrame } from "@/components/page-frame";
 import { badgeDataUri, badgeLabel } from "@/lib/badge-svg";
+import { getLatestCitations } from "@/lib/citations/store";
 import { getLatestCheck, getOrCreateCheck } from "@/lib/checks";
 import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
 import { normalizeDomain } from "@/lib/domain";
+import {
+  PLATFORM_LABELS,
+  PLATFORMS,
+  platformVerdict,
+  type Platform,
+} from "@/lib/platforms";
+import { scoreFromCheck, scoreTone } from "@/lib/score";
 import { SITE_NAME, absoluteUrl } from "@/lib/seo";
 import { formatCheckedAt } from "@/lib/time";
 
@@ -113,6 +121,21 @@ function FileRow({
   );
 }
 
+function readyLabel(verdict: ReturnType<typeof platformVerdict>) {
+  if (verdict === "pass") return "Ready";
+  if (verdict === "unclear") return "Unclear";
+  return "Blocked";
+}
+
+function readyClass(verdict: ReturnType<typeof platformVerdict>) {
+  return verdict === "pass" ? "text-accent" : "text-warn";
+}
+
+function scoreClass(score: number) {
+  const tone = scoreTone(score);
+  return tone === "ready" ? "text-accent" : "text-warn";
+}
+
 export default async function ReportPage(props: PageProps<"/report/[domain]">) {
   const raw = decodeURIComponent((await props.params).domain);
   const domain = normalizeDomain(raw);
@@ -129,6 +152,8 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
   }
 
   const result = await getOrCreateCheck(domain, { fresh });
+  const score = scoreFromCheck(result);
+  const citations = await getLatestCitations(domain);
   const verdictTone = result.verdict === "pass" ? "text-accent" : "text-warn";
   const verdictTitle =
     result.verdict === "pass"
@@ -172,7 +197,9 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{domain}</h1>
-          <p className="mt-2 text-sm text-muted">{formatCheckedAt(result.checkedAt)}</p>
+          <p className="mt-2 text-sm text-muted">
+            Last searched {formatCheckedAt(result.checkedAt)}
+          </p>
         </div>
         <Link href={`/report/${domain}?fresh=1`} className="text-sm underline underline-offset-4">
           Re-check
@@ -180,13 +207,30 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
       </div>
 
       <div className="mt-8 rounded-lg border border-border bg-surface p-6">
-        <p className={`text-sm font-medium ${verdictTone}`}>{verdictTitle}</p>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={badgeDataUri(result.verdict, result.checkedAt)}
-          alt={badgeLabel(result.verdict, result.checkedAt)}
-          className="mt-4 h-6"
-        />
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className={`text-sm font-medium ${verdictTone}`}>{verdictTitle}</p>
+            <p className="mt-3 text-4xl font-semibold tracking-tight">
+              <span className={scoreClass(score.total)}>{score.total}</span>
+              <span className="text-lg text-muted"> / 100</span>
+            </p>
+            <p className="mt-1 text-sm text-muted">Crawl readiness score</p>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={badgeDataUri({
+              verdict: result.verdict,
+              checkedAt: result.checkedAt,
+              score: score.total,
+            })}
+            alt={badgeLabel({
+              verdict: result.verdict,
+              checkedAt: result.checkedAt,
+              score: score.total,
+            })}
+            className="h-6"
+          />
+        </div>
         {!result.robotsTxtFound ? (
           <p className="mt-4 text-sm text-muted">
             No valid robots.txt found. Bots may crawl by default, but we can’t confirm
@@ -194,6 +238,40 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
           </p>
         ) : null}
       </div>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium">Platform readiness</h2>
+        <p className="mt-1 text-sm text-muted">
+          Crawl access per AI product. Citation probes appear when Pro monitoring has run.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {PLATFORMS.map((platform: Platform) => {
+            const verdict = platformVerdict(platform, result);
+            const platformScore = score.platforms[platform];
+            const cite = citations?.engines[platform];
+            return (
+              <div
+                key={platform}
+                className="rounded-lg border border-border bg-surface px-4 py-3"
+              >
+                <p className="text-xs uppercase tracking-wide text-muted">
+                  {PLATFORM_LABELS[platform]}
+                </p>
+                <p className={`mt-2 text-2xl font-semibold ${scoreClass(platformScore)}`}>
+                  {platformScore}
+                  <span className="text-sm font-normal text-muted"> / 100</span>
+                </p>
+                <p className={`mt-1 text-sm ${readyClass(verdict)}`}>{readyLabel(verdict)}</p>
+                <p className="mt-2 text-xs text-muted">
+                  {cite && !cite.skipped && cite.probes > 0
+                    ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
+                    : "Citations: not probed yet"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="mt-8">
         <h2 className="text-sm font-medium">AI search bots</h2>
@@ -238,7 +316,12 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
       {result.error ? <p className="mt-4 text-sm text-warn">{result.error}</p> : null}
 
       <div className="mt-8">
-        <CopyEmbed domain={domain} verdict={result.verdict} checkedAt={result.checkedAt} />
+        <CopyEmbed
+          domain={domain}
+          result={result}
+          score={score}
+          citations={citations}
+        />
       </div>
 
       <div className="mt-8">

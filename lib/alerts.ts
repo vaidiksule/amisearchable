@@ -30,12 +30,12 @@ export async function sendStatusChangeEmail(
   const { error } = await client.resend.emails.send({
     from: client.from,
     to,
-    subject: `${next.domain} is now ${badgeLabel(next.verdict)}`,
+    subject: `${next.domain} is now ${badgeLabel({ verdict: next.verdict, checkedAt: next.checkedAt })}`,
     html: `
       <p>The AI-search status for <strong>${escapeHtml(next.domain)}</strong> changed.</p>
       <p>
-        Before: <strong>${escapeHtml(badgeLabel(previous.verdict))}</strong><br>
-        Now: <strong>${escapeHtml(badgeLabel(next.verdict))}</strong>
+        Before: <strong>${escapeHtml(badgeLabel({ verdict: previous.verdict, checkedAt: previous.checkedAt }))}</strong><br>
+        Now: <strong>${escapeHtml(badgeLabel({ verdict: next.verdict, checkedAt: next.checkedAt }))}</strong>
       </p>
       <p><a href="${reportUrl}">Open the report</a></p>
     `,

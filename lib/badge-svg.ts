@@ -1,11 +1,16 @@
 import type { Verdict } from "@/lib/crawlers";
+import type { Platform } from "@/lib/platforms";
+import { scoreTone } from "@/lib/score";
 import { formatBadgeAge } from "@/lib/time";
 
 export const BADGE_STYLES = ["shield", "pill", "terminal", "outline"] as const;
 export type BadgeStyle = (typeof BADGE_STYLES)[number];
 
+export const BADGE_VIEWS = ["ready", "score", "age", "cited"] as const;
+export type BadgeView = (typeof BADGE_VIEWS)[number];
+
 /** Bump when badge artwork changes so browsers/CDNs drop stale SVGs. */
-export const BADGE_ASSET_VERSION = "3";
+export const BADGE_ASSET_VERSION = "4";
 
 export const BADGE_STYLE_META: Record<
   BadgeStyle,
@@ -29,6 +34,16 @@ export const BADGE_STYLE_META: Record<
   },
 };
 
+export type BadgeModel = {
+  verdict: Verdict | "pending";
+  checkedAt?: string;
+  score?: number;
+  citations?: { hits: number; probes: number } | null;
+  view?: BadgeView;
+  engine?: Platform | "all";
+  style?: BadgeStyle;
+};
+
 export function parseBadgeStyle(value: string | null | undefined): BadgeStyle {
   if (value && (BADGE_STYLES as readonly string[]).includes(value)) {
     return value as BadgeStyle;
@@ -36,61 +51,107 @@ export function parseBadgeStyle(value: string | null | undefined): BadgeStyle {
   return "shield";
 }
 
-export function renderBadgeSvg(
-  verdict: Verdict | "pending",
-  checkedAt?: string,
-  style: BadgeStyle = "shield",
-): string {
-  const age = formatBadgeAge(checkedAt);
+export function parseBadgeView(value: string | null | undefined): BadgeView {
+  if (value && (BADGE_VIEWS as readonly string[]).includes(value)) {
+    return value as BadgeView;
+  }
+  return "ready";
+}
+
+export function renderBadgeSvg(model: BadgeModel): string {
+  const style = model.style ?? "shield";
+  const view = model.view ?? "ready";
+  const { label, value, tone } = resolveBadgeCopy(model, view);
+  const age = formatBadgeAge(model.checkedAt);
+
   switch (style) {
     case "pill":
-      return pillBadge(verdict, age);
+      return pillBadge(label, value, tone, age);
     case "terminal":
-      return terminalBadge(verdict, age);
+      return terminalBadge(label, value, tone, age);
     case "outline":
-      return outlineBadge(verdict, age);
+      return outlineBadge(label, value, tone, age);
     default:
-      return shieldBadge(verdict, age);
+      return shieldBadge(label, value, tone);
   }
 }
 
-export function badgeLabel(
-  verdict: Verdict,
-  checkedAt?: string,
-  style: BadgeStyle = "shield",
-): string {
-  const age = formatBadgeAge(checkedAt);
-  if (style === "terminal") {
-    if (verdict === "unclear") return `$ ai-search: unclear · ${age}`;
-    return verdict === "pass" ? `$ ai-search: ready · ${age}` : `$ ai-search: blocked · ${age}`;
-  }
-  if (style === "pill" || style === "outline") {
-    if (verdict === "unclear") return `No robots.txt · ${age}`;
-    return verdict === "pass" ? `AI Searchable · ${age}` : `Blocks AI Search · ${age}`;
-  }
-  if (verdict === "unclear") return `AI Searchable: unclear · ${age}`;
-  return verdict === "pass" ? `AI Searchable: ready · ${age}` : `AI Searchable: blocked · ${age}`;
+export function badgeLabel(model: BadgeModel): string {
+  const view = model.view ?? "ready";
+  const { label, value } = resolveBadgeCopy(model, view);
+  return `${label}: ${value}`;
 }
 
-export function badgeDataUri(
-  verdict: Verdict | "pending",
-  checkedAt?: string,
-  style: BadgeStyle = "shield",
-): string {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(renderBadgeSvg(verdict, checkedAt, style))}`;
+export function badgeDataUri(model: BadgeModel): string {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(renderBadgeSvg(model))}`;
 }
 
-function shieldBadge(verdict: Verdict | "pending", age: string): string {
-  const tone = toneFrom(verdict);
-  const status =
+function resolveBadgeCopy(
+  model: BadgeModel,
+  view: BadgeView,
+): { label: string; value: string; tone: Tone } {
+  const enginePrefix =
+    model.engine && model.engine !== "all" ? `${shortEngine(model.engine)} ` : "";
+
+  if (view === "score") {
+    const score = model.score ?? 0;
+    return {
+      label: `${enginePrefix}ai score`.trim(),
+      value: `${score}/100`,
+      tone: scoreTone(score),
+    };
+  }
+
+  if (view === "age") {
+    return {
+      label: `${enginePrefix}last search`.trim(),
+      value: formatBadgeAge(model.checkedAt),
+      tone: toneFrom(model.verdict),
+    };
+  }
+
+  if (view === "cited") {
+    const c = model.citations;
+    if (!c || c.probes === 0) {
+      return {
+        label: `${enginePrefix}cited`.trim(),
+        value: "pending",
+        tone: "pending",
+      };
+    }
+    return {
+      label: `${enginePrefix}cited`.trim(),
+      value: `${c.hits}/${c.probes}`,
+      tone: c.hits > 0 ? "ready" : "blocked",
+    };
+  }
+
+  // ready
+  const tone = toneFrom(model.verdict);
+  const value =
     tone === "unclear"
-      ? `unclear · ${age}`
+      ? "unclear"
       : tone === "pending"
         ? "pending"
         : tone === "ready"
-          ? `ready · ${age}`
-          : `blocked · ${age}`;
-  const label = "ai search";
+          ? "ready"
+          : "blocked";
+  return {
+    label: `${enginePrefix}ai search`.trim(),
+    value: view === "ready" && model.checkedAt ? `${value} · ${formatBadgeAge(model.checkedAt)}` : value,
+    tone,
+  };
+}
+
+function shortEngine(engine: Platform): string {
+  if (engine === "chatgpt") return "gpt";
+  if (engine === "perplexity") return "pplx";
+  return engine;
+}
+
+type Tone = "ready" | "blocked" | "unclear" | "pending";
+
+function shieldBadge(label: string, status: string, tone: Tone): string {
   const colors = {
     ready: "#16a34a",
     blocked: "#dc2626",
@@ -122,8 +183,8 @@ function shieldBadge(verdict: Verdict | "pending", age: string): string {
           : `<path d="M3.5 7.2 L6 9.6 L10.6 4.4" stroke="#0B0D10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${label}: ${status}">
-  <title>${label}: ${status}</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${escapeXml(label)}: ${escapeXml(status)}">
+  <title>${escapeXml(label)}: ${escapeXml(status)}</title>
   <rect rx="3" width="${width}" height="20" fill="#3f3f46"/>
   <rect rx="3" x="${labelWidth}" width="${statusWidth}" height="20" fill="${colors[tone]}"/>
   <rect x="${labelWidth}" width="4" height="20" fill="${colors[tone]}"/>
@@ -138,72 +199,59 @@ function shieldBadge(verdict: Verdict | "pending", age: string): string {
 </svg>`;
 }
 
-function pillBadge(verdict: Verdict | "pending", age: string): string {
-  const tone = toneFrom(verdict);
-  const label =
-    tone === "unclear"
-      ? `No robots.txt · ${age}`
-      : tone === "pending"
-        ? "AI Searchable · pending"
-        : tone === "ready"
-          ? `AI Searchable · ${age}`
-          : `Blocks AI Search · ${age}`;
+function pillBadge(label: string, value: string, tone: Tone, _age: string): string {
+  const text = `${label} ${value}`;
   const bg =
-    tone === "unclear" ? "#fef9c3" : tone === "blocked" ? "#fee2e2" : "#dcfce7";
+    tone === "unclear" ? "#fef9c3" : tone === "blocked" ? "#fee2e2" : tone === "pending" ? "#f5f5f4" : "#dcfce7";
   const fg =
-    tone === "unclear" ? "#854d0e" : tone === "blocked" ? "#991b1b" : "#166534";
-  const icon = tone === "blocked" ? "×" : tone === "unclear" ? "●" : "✓";
-  const width = Math.round(Math.max(128, label.length * 7.1 + 42));
+    tone === "unclear" ? "#854d0e" : tone === "blocked" ? "#991b1b" : tone === "pending" ? "#57534e" : "#166534";
+  const icon = tone === "blocked" ? "×" : tone === "unclear" ? "●" : tone === "pending" ? "…" : "✓";
+  const width = Math.round(Math.max(128, text.length * 7.1 + 42));
   const height = 24;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(label)}">
-  <title>${escapeXml(label)}</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(text)}">
+  <title>${escapeXml(text)}</title>
   <rect width="${width}" height="${height}" rx="12" fill="${bg}"/>
   <text x="14" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="${fg}">${icon}</text>
-  <text x="30" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="${fg}">${escapeXml(label)}</text>
+  <text x="30" y="16" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="${fg}">${escapeXml(text)}</text>
 </svg>`;
 }
 
-function terminalBadge(verdict: Verdict | "pending", age: string): string {
-  const tone = toneFrom(verdict);
-  const status =
-    tone === "unclear" ? "unclear" : tone === "pending" ? "pending" : tone === "ready" ? "ready" : "blocked";
-  const label = `$ ai-search: ${status}`;
-  const width = Math.round(Math.max(138, label.length * 7.4 + 28));
+function terminalBadge(label: string, value: string, tone: Tone, age: string): string {
+  const text = `$ ${label}: ${value}`;
+  const width = Math.round(Math.max(138, text.length * 7.4 + 28));
   const height = 24;
   const color =
-    tone === "blocked" ? "#f87171" : tone === "unclear" ? "#facc15" : "#4ade80";
+    tone === "blocked" ? "#f87171" : tone === "unclear" ? "#facc15" : tone === "pending" ? "#a8a29e" : "#4ade80";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(label)} · ${age}">
-  <title>${escapeXml(label)} · ${age}</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(text)} · ${age}">
+  <title>${escapeXml(text)} · ${age}</title>
   <rect width="${width}" height="${height}" rx="4" fill="#111827"/>
-  <text x="12" y="16" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="${color}">${escapeXml(label)}</text>
+  <text x="12" y="16" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="${color}">${escapeXml(text)}</text>
 </svg>`;
 }
 
-function outlineBadge(verdict: Verdict | "pending", age: string): string {
-  const tone = toneFrom(verdict);
-  const title =
-    tone === "unclear" ? "No robots.txt" : tone === "blocked" ? "Blocks AI Search" : "AI Searchable";
-  const ageLabel = `· ${age}`;
-  const width = Math.round(Math.max(148, title.length * 7.2 + ageLabel.length * 6.2 + 40));
+function outlineBadge(label: string, value: string, tone: Tone, _age: string): string {
+  const title = label;
+  const valueLabel = `· ${value}`;
+  const width = Math.round(Math.max(148, title.length * 7.2 + valueLabel.length * 6.2 + 40));
   const height = 28;
   const dot =
-    tone === "unclear" ? "#ca8a04" : tone === "blocked" ? "#dc2626" : "#16a34a";
+    tone === "unclear" ? "#ca8a04" : tone === "blocked" ? "#dc2626" : tone === "pending" ? "#a8a29e" : "#16a34a";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${title} ${ageLabel}">
-  <title>${title} ${ageLabel}</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(title)} ${escapeXml(valueLabel)}">
+  <title>${escapeXml(title)} ${escapeXml(valueLabel)}</title>
   <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="6" fill="#ffffff" stroke="#d4d4d8"/>
   <circle cx="14" cy="14" r="4" fill="${dot}"/>
   <text x="26" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#18181b">${escapeXml(title)}</text>
-  <text x="${26 + title.length * 7.2 + 6}" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#71717a">${escapeXml(ageLabel)}</text>
+  <text x="${26 + title.length * 7.2 + 6}" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#71717a">${escapeXml(valueLabel)}</text>
 </svg>`;
 }
 
-function toneFrom(verdict: Verdict | "pending"): "ready" | "blocked" | "unclear" | "pending" {
+function toneFrom(verdict: Verdict | "pending"): Tone {
   if (verdict === "pending") return "pending";
   if (verdict === "unclear") return "unclear";
   return verdict === "pass" ? "ready" : "blocked";

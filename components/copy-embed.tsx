@@ -1,29 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StaticBadge } from "@/components/static-badge";
-import { BADGE_STYLES, type BadgeStyle } from "@/lib/badge-svg";
-import type { Verdict } from "@/lib/crawlers";
+import {
+  BADGE_STYLES,
+  BADGE_VIEWS,
+  type BadgeStyle,
+  type BadgeView,
+} from "@/lib/badge-svg";
+import type { CitationSnapshot } from "@/lib/citations/types";
+import { citationSummary } from "@/lib/citations/types";
+import type { CheckResult, Verdict } from "@/lib/crawlers";
 import { embedAgentPrompt, embedHtml, embedMarkdown } from "@/lib/domain";
+import {
+  PLATFORM_LABELS,
+  PLATFORMS,
+  platformVerdict,
+  type Platform,
+} from "@/lib/platforms";
+import type { ScoreBreakdown } from "@/lib/score";
 
 type Format = "html" | "markdown";
 
 export function CopyEmbed({
   domain,
-  verdict,
-  checkedAt,
+  result,
+  score,
+  citations,
 }: {
   domain: string;
-  verdict: Verdict;
-  checkedAt?: string;
+  result: CheckResult;
+  score: ScoreBreakdown;
+  citations: CitationSnapshot | null;
 }) {
   const [format, setFormat] = useState<Format>("markdown");
   const [style, setStyle] = useState<BadgeStyle>("shield");
+  const [view, setView] = useState<BadgeView>("ready");
+  const [engine, setEngine] = useState<Platform | "all">("all");
   const [copied, setCopied] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  const opts = useMemo(() => ({ style, view, engine }), [style, view, engine]);
+
+  const preview = useMemo(() => {
+    const verdict: Verdict =
+      engine === "all"
+        ? result.verdict
+        : platformVerdict(engine, {
+            robotsTxtFound: result.robotsTxtFound,
+            crawlers: result.crawlers,
+          });
+    const scoreValue = engine === "all" ? score.total : score.platforms[engine];
+    return {
+      verdict,
+      checkedAt: result.checkedAt,
+      score: scoreValue,
+      citations: citationSummary(citations, engine),
+      view,
+      engine,
+      style,
+    };
+  }, [citations, engine, result, score, style, view]);
+
   const snippet =
-    format === "html" ? embedHtml(domain, style) : embedMarkdown(domain, style);
-  const agentPrompt = embedAgentPrompt(domain, style);
+    format === "html" ? embedHtml(domain, opts) : embedMarkdown(domain, opts);
+  const agentPrompt = embedAgentPrompt(domain, opts);
 
   async function copy() {
     try {
@@ -65,6 +106,48 @@ export function CopyEmbed({
         </div>
       </div>
 
+      <p className="mb-2 text-xs text-muted">Show</p>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {BADGE_VIEWS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => setView(option)}
+            className={`rounded-md border px-3 py-1.5 text-xs capitalize ${
+              view === option ? "border-foreground" : "border-border hover:border-stone-400"
+            }`}
+          >
+            {option === "age" ? "Last searched" : option}
+          </button>
+        ))}
+      </div>
+
+      <p className="mb-2 text-xs text-muted">Engine</p>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setEngine("all")}
+          className={`rounded-md border px-3 py-1.5 text-xs ${
+            engine === "all" ? "border-foreground" : "border-border hover:border-stone-400"
+          }`}
+        >
+          All
+        </button>
+        {PLATFORMS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => setEngine(option)}
+            className={`rounded-md border px-3 py-1.5 text-xs ${
+              engine === option ? "border-foreground" : "border-border hover:border-stone-400"
+            }`}
+          >
+            {PLATFORM_LABELS[option]}
+          </button>
+        ))}
+      </div>
+
+      <p className="mb-2 text-xs text-muted">Style</p>
       <div className="mb-4 flex flex-wrap gap-2">
         {BADGE_STYLES.map((option) => {
           const selected = style === option;
@@ -77,15 +160,14 @@ export function CopyEmbed({
                 selected ? "border-foreground" : "border-border hover:border-stone-400"
               }`}
             >
-              <StaticBadge
-                verdict={verdict}
-                checkedAt={checkedAt}
-                style={option}
-                className="h-5"
-              />
+              <StaticBadge {...preview} style={option} className="h-5" />
             </button>
           );
         })}
+      </div>
+
+      <div className="mb-4">
+        <StaticBadge {...preview} className="h-6" />
       </div>
 
       <pre className="overflow-x-auto rounded-md bg-code p-3 font-mono text-xs leading-6 text-code-text">

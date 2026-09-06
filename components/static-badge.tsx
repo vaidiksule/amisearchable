@@ -1,21 +1,13 @@
-import { badgeDataUri, badgeLabel, type BadgeStyle } from "@/lib/badge-svg";
-import type { Verdict } from "@/lib/crawlers";
+import { badgeDataUri, badgeLabel, type BadgeModel } from "@/lib/badge-svg";
 
 export function StaticBadge({
-  verdict,
-  checkedAt,
-  style = "shield",
   className = "h-5",
-}: {
-  verdict: Verdict | "pending";
-  checkedAt?: string;
-  style?: BadgeStyle;
-  className?: string;
-}) {
+  ...model
+}: BadgeModel & { className?: string }) {
   const alt =
-    verdict === "pending" ? "AI Searchable pending" : badgeLabel(verdict, checkedAt, style);
+    model.verdict === "pending" ? "AI Searchable pending" : badgeLabel(model);
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={badgeDataUri(verdict, checkedAt, style)} alt={alt} className={className} />
+    <img src={badgeDataUri(model)} alt={alt} className={className} />
   );
 }
