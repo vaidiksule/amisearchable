@@ -1,8 +1,14 @@
 import { Webhooks } from "@polar-sh/nextjs";
-import { applySubscription } from "@/lib/billing";
+import {
+  applyCheckoutWebhook,
+  applySubscription,
+} from "@/lib/billing";
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET ?? "unconfigured",
+  onCheckoutUpdated: async (payload) => {
+    await applyCheckoutWebhook(payload.data);
+  },
   onSubscriptionCreated: async (payload) => {
     await applySubscription(payload.data);
   },

@@ -27,13 +27,36 @@ export async function upsertProfile(id: string, email: string): Promise<Profile 
   const admin = createAdminClient();
   if (!admin) return null;
 
+  const { data: existing } = await admin
+    .from("users")
+    .select("id, email, polar_customer_id, plan")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.email !== email) {
+      const { data, error } = await admin
+        .from("users")
+        .update({ email })
+        .eq("id", id)
+        .select("id, email, polar_customer_id, plan")
+        .single();
+      if (error || !data) return existing as Profile;
+      return data as Profile;
+    }
+    return existing as Profile;
+  }
+
   const { data, error } = await admin
     .from("users")
-    .upsert({ id, email }, { onConflict: "id" })
+    .insert({ id, email })
     .select("id, email, polar_customer_id, plan")
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("Failed to create user profile", error);
+    return null;
+  }
   return data as Profile;
 }
 
