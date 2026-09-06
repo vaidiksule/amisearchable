@@ -41,9 +41,9 @@ export default async function PricingPage(props: PageProps<"/pricing">) {
           <p className="mt-2 text-2xl font-semibold">$5/mo</p>
           <p className="text-sm text-muted">or $40/yr · 5 domains</p>
           <ul className="mt-4 space-y-2 text-sm text-muted">
-            <li>Daily auto refresh</li>
+            <li>Daily auto refresh (no action needed)</li>
             <li>Email when status changes</li>
-            <li>Optional deploy / GitHub hook</li>
+            <li>Optional GitHub Action for instant post-push refresh</li>
             <li>Same badge URL</li>
           </ul>
           {profile?.plan === "pro" ? (

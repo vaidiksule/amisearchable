@@ -98,7 +98,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             <div>
               <p className="text-sm text-foreground">Monitored domains</p>
               <p className="mt-1 text-sm text-muted">
-                {monitors.length} / {PRO_DOMAIN_LIMIT} used · daily refresh + email on change
+                {monitors.length} / {PRO_DOMAIN_LIMIT} used · we re-check daily automatically
               </p>
             </div>
           </div>

@@ -139,7 +139,7 @@ export default function Home() {
           <li>Check your domain — we read robots.txt, llms.txt, and sitemap.</li>
           <li>Copy the badge into your README.</li>
           <li>
-            Optional Pro: daily re-check + email on change, or hit a deploy hook after you ship.
+            Optional Pro: we re-check daily and email on change — nothing else to run.
           </li>
         </ol>
       </section>
