@@ -6,11 +6,21 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const next = safeNextPath(url.searchParams.get("next"));
+  const oauthError = url.searchParams.get("error");
+
+  if (oauthError) {
+    return NextResponse.redirect(new URL(`/login?error=google&next=${encodeURIComponent(next)}`, url.origin));
+  }
 
   if (code) {
     const supabase = await createUserClient();
     if (supabase) {
-      await supabase.auth.exchangeCodeForSession(code);
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        return NextResponse.redirect(
+          new URL(`/login?error=google&next=${encodeURIComponent(next)}`, url.origin),
+        );
+      }
     }
   }
 

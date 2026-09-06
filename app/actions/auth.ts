@@ -35,6 +35,31 @@ export async function requestMagicLink(
   return { sent: true };
 }
 
+export async function signInWithGoogle(formData: FormData): Promise<void> {
+  const next = safeNextPath(String(formData.get("next") ?? "/dashboard"));
+  const supabase = await createUserClient();
+  if (!supabase) {
+    redirect(`/login?next=${encodeURIComponent(next)}&error=auth`);
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    },
+  });
+
+  if (error || !data.url) {
+    redirect(`/login?next=${encodeURIComponent(next)}&error=google`);
+  }
+
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createUserClient();
   if (supabase) {

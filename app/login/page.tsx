@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 export default async function LoginPage(props: PageProps<"/login">) {
   const searchParams = await props.searchParams;
   const next = safeNextPath(typeof searchParams.next === "string" ? searchParams.next : "/dashboard");
+  const error = typeof searchParams.error === "string" ? searchParams.error : null;
   const user = await getCurrentUser();
 
   if (user) {
@@ -22,8 +23,10 @@ export default async function LoginPage(props: PageProps<"/login">) {
   return (
     <PageFrame>
       <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
-      <p className="mt-3 text-sm text-muted">We’ll email a link. No password.</p>
-      <LoginForm next={next} />
+      <p className="mt-3 text-sm text-muted">
+        Continue with Google, or get a magic link by email. No password.
+      </p>
+      <LoginForm next={next} error={error} />
     </PageFrame>
   );
 }
