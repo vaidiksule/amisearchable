@@ -16,6 +16,8 @@ export type BadgeEmbedOptions = {
   engine?: Platform | "all";
   show?: BadgeShowField[];
   engines?: Platform[];
+  /** Include bordered site-wide “ai search” summary above engine rows. */
+  overall?: boolean;
   origin?: string;
   bust?: string;
 };
@@ -73,6 +75,10 @@ export function badgeSrc(domain: string, opts: BadgeEmbedOptions = {}): string {
     params.set("engines", engines.join(","));
   } else if (opts.engine && opts.engine !== "all") {
     params.set("engine", opts.engine);
+  }
+
+  if (opts.overall === true) {
+    params.set("overall", "1");
   }
 
   if (opts.style && opts.style !== "shield" && opts.style !== "classic") {

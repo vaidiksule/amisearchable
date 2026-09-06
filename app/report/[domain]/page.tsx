@@ -10,7 +10,7 @@ import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
 import { normalizeDomain } from "@/lib/domain";
 import {
   PLATFORM_LABELS,
-  PLATFORMS,
+  PLATFORMS_UI_ORDER,
   isCitationComingSoon,
   platformVerdict,
   type Platform,
@@ -243,11 +243,14 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
       <section className="mt-8">
         <h2 className="text-sm font-medium">Platform readiness</h2>
         <p className="mt-1 text-sm text-muted">
-          Crawl access per AI product. Live citation probes: ChatGPT, Gemini, Grok.
-          Claude and Perplexity citations coming soon.
+          Bot-access score per engine (0–100 from that product’s crawlers only — not
+          the site-wide crawl score above). Live citation probes: ChatGPT, Gemini,
+          Grok. Anthropic and Perplexity citations coming soon. Scores match when all
+          of that engine’s bots are allowed; they diverge only if you block a specific
+          bot.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {PLATFORMS.map((platform: Platform) => {
+          {PLATFORMS_UI_ORDER.map((platform: Platform) => {
             const verdict = platformVerdict(platform, result);
             const platformScore = score.platforms[platform];
             const cite = citations?.engines[platform];
@@ -276,6 +279,7 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
                       {platformScore}
                       <span className="text-sm font-normal text-muted"> / 100</span>
                     </p>
+                    <p className="mt-0.5 text-xs text-muted">Bot access</p>
                     <p className={`mt-1 text-sm ${readyClass(verdict)}`}>{readyLabel(verdict)}</p>
                     <p className="mt-2 text-xs text-muted">
                       {cite && !cite.skipped && cite.probes > 0

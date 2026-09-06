@@ -64,7 +64,7 @@ export function AiReadyBadgeGuide() {
           <code className="font-mono text-foreground">
             ?engines=chatgpt,gemini,grok&amp;show=ready,score,age
           </code>
-          . Claude and Perplexity citations are coming soon; crawl readiness still works.
+          . Anthropic and Perplexity citations are coming soon; crawl readiness still works.
         </p>
       </GuideSection>
 

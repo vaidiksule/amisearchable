@@ -21,6 +21,8 @@ export function buildCompositeBadgeModel(input: {
   engines: Platform[];
   show: BadgeShowField[];
   style?: CompositeBadgeModel["style"];
+  /** Bordered site summary. Default: on when no engines, off when engines are listed. */
+  includeOverall?: boolean;
 }): CompositeBadgeModel {
   const { result, score, citations, engines, show, style } = input;
   const rows: EngineBadgeRow[] = engines.map((id) => {
@@ -39,11 +41,15 @@ export function buildCompositeBadgeModel(input: {
     };
   });
 
+  const includeOverall =
+    input.includeOverall ?? (engines.length === 0);
+
   return {
     checkedAt: result.checkedAt,
     overallVerdict: result.verdict,
     overallScore: score.total,
     overallCitations: citationSummary(citations, "all"),
+    includeOverall,
     engines: rows,
     show: show.length > 0 ? show : ["ready"],
     style: style ?? "classic",

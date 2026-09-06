@@ -27,7 +27,7 @@ export const BADGE_SHOW_FIELDS = ["ready", "score", "age", "cited"] as const;
 export type BadgeShowField = (typeof BADGE_SHOW_FIELDS)[number];
 
 /** Bump when badge artwork changes so browsers/CDNs drop stale SVGs. */
-export const BADGE_ASSET_VERSION = "6";
+export const BADGE_ASSET_VERSION = "8";
 
 export const BADGE_SHOW_LABELS: Record<BadgeShowField, string> = {
   ready: "Ready",
@@ -50,6 +50,8 @@ export type CompositeBadgeModel = {
   overallVerdict: Verdict | "pending";
   overallScore: number;
   overallCitations: { hits: number; probes: number } | null;
+  /** When true, render the bordered “ai search” summary capsule. */
+  includeOverall: boolean;
   engines: EngineBadgeRow[];
   show: BadgeShowField[];
   style?: CompositeStyle;
@@ -117,22 +119,47 @@ export function renderCompositeBadgeSvg(model: CompositeBadgeModel): string {
 }
 
 export function compositeBadgeLabel(model: CompositeBadgeModel): string {
-  const engines =
-    model.engines.length > 0
-      ? model.engines.map((row) => PLATFORM_LABELS[row.id]).join(", ")
-      : "all engines";
-  return `AI Searchable (${engines}): ${metricParts(model.overallVerdict, model.overallScore, model.overallCitations, model.show, model.checkedAt, false).join(" · ")}`;
+  const showOverall = model.includeOverall || model.engines.length === 0;
+  if (showOverall) {
+    const summary = metricParts(
+      model.overallVerdict,
+      model.overallScore,
+      model.overallCitations,
+      model.show,
+      model.checkedAt,
+      false,
+    ).join(" · ");
+    const engines =
+      model.engines.length > 0
+        ? ` + ${model.engines.map((row) => PLATFORM_LABELS[row.id]).join(", ")}`
+        : "";
+    return `AI Searchable: ${summary}${engines}`;
+  }
+  const bits = model.engines.map((row) => {
+    const metrics = metricParts(
+      row.verdict,
+      row.score,
+      row.citations,
+      model.show.filter((field) => field !== "age"),
+      model.checkedAt,
+      Boolean(row.comingSoon),
+    ).join(" · ");
+    return `${PLATFORM_LABELS[row.id]} ${metrics}`;
+  });
+  return `AI Searchable: ${bits.join("; ")}`;
 }
 
 export function compositeBadgeDataUri(model: CompositeBadgeModel): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(renderCompositeBadgeSvg(model))}`;
 }
 
-/** Classic shields.io look — overall + one shield per engine, stacked. */
+/** Classic shields — optional bordered overall + engine rows. */
 function renderClassicComposite(model: CompositeBadgeModel): string {
   const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
-  const lines: { label: string; status: string; tone: Tone }[] = [
-    {
+  const lines: { label: string; status: string; tone: Tone; overall?: boolean }[] = [];
+
+  if (model.includeOverall || model.engines.length === 0) {
+    lines.push({
       label: "ai search",
       status: metricParts(
         model.overallVerdict,
@@ -143,8 +170,12 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
         false,
       ).join(" · "),
       tone: toneFrom(model.overallVerdict),
-    },
-    ...model.engines.map((row) => ({
+      overall: true,
+    });
+  }
+
+  for (const row of model.engines) {
+    lines.push({
       label: shortEngine(row.id),
       status: metricParts(
         row.verdict,
@@ -154,40 +185,76 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
         model.checkedAt,
         Boolean(row.comingSoon),
       ).join(" · "),
-      tone: row.comingSoon && show.includes("cited") && show.length === 1
-        ? ("pending" as Tone)
-        : toneFrom(row.verdict),
-    })),
-  ];
+      tone:
+        row.comingSoon && show.includes("cited") && show.length === 1
+          ? ("pending" as Tone)
+          : toneFrom(row.verdict),
+    });
+  }
 
-  const gap = 4;
+  if (lines.length === 0) {
+    lines.push({
+      label: "ai search",
+      status: "pending",
+      tone: "pending",
+      overall: true,
+    });
+  }
+
+  const gap = 6;
   const rowH = 20;
+  const borderPad = 3;
   const parts = lines.map((line) => measureShield(line.label, line.status || "—"));
-  const width = Math.max(...parts.map((part) => part.width));
-  const height = lines.length * rowH + Math.max(0, lines.length - 1) * gap;
+  const innerWidth = Math.max(...parts.map((part) => part.width));
+  const width = innerWidth + (lines.some((line) => line.overall) ? borderPad * 2 : 0);
 
-  const body = lines
-    .map((line, index) => {
-      const y = index * (rowH + gap);
-      return `<g transform="translate(0 ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, width)}</g>`;
-    })
-    .join("\n");
+  let y = 0;
+  const bodyParts: string[] = [];
+  for (const line of lines) {
+    if (line.overall) {
+      const boxH = rowH + borderPad * 2;
+      bodyParts.push(`
+  <g transform="translate(0 ${y})">
+    <rect x="0.5" y="0.5" width="${width - 1}" height="${boxH - 1}" rx="5" fill="none" stroke="#161412" stroke-width="1.5"/>
+    <g transform="translate(${borderPad} ${borderPad})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth)}</g>
+  </g>`);
+      y += boxH + gap;
+    } else {
+      const x = lines.some((l) => l.overall) ? borderPad : 0;
+      bodyParts.push(
+        `<g transform="translate(${x} ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth)}</g>`,
+      );
+      y += rowH + gap;
+    }
+  }
 
+  const height = Math.max(rowH, y - gap);
   const aria = lines.map((line) => `${line.label}: ${line.status}`).join("; ");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(aria)}">
   <title>${escapeXml(aria)}</title>
-  ${body}
+  ${bodyParts.join("\n")}
 </svg>`;
 }
 
-/** One classic shield with all selected metrics. */
+/** One classic shield — single engine, or bordered overall. */
 function renderCompactComposite(model: CompositeBadgeModel): string {
   const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
-  const engineBit =
-    model.engines.length > 0
-      ? model.engines.map((row) => shortEngine(row.id)).join("+")
-      : "ai search";
+
+  if (model.engines.length >= 1 && !model.includeOverall) {
+    if (model.engines.length > 1) return renderClassicComposite(model);
+    const row = model.engines[0]!;
+    const status = metricParts(
+      row.verdict,
+      row.score,
+      row.citations,
+      show.filter((field) => field !== "age"),
+      model.checkedAt,
+      Boolean(row.comingSoon),
+    ).join(" · ");
+    return shieldBadge(shortEngine(row.id), status || readyWord(row.verdict), toneFrom(row.verdict));
+  }
+
   const status = metricParts(
     model.overallVerdict,
     model.overallScore,
@@ -196,14 +263,25 @@ function renderCompactComposite(model: CompositeBadgeModel): string {
     model.checkedAt,
     false,
   ).join(" · ");
-  return shieldBadge(engineBit, status || readyWord(model.overallVerdict), toneFrom(model.overallVerdict));
+  const measured = measureShield("ai search", status || readyWord(model.overallVerdict));
+  const pad = 3;
+  const width = measured.width + pad * 2;
+  const height = 20 + pad * 2;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="ai search: ${escapeXml(status)}">
+  <title>ai search: ${escapeXml(status)}</title>
+  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="5" fill="none" stroke="#161412" stroke-width="1.5"/>
+  <g transform="translate(${pad} ${pad})">${shieldBadgeInner("ai search", status || readyWord(model.overallVerdict), toneFrom(model.overallVerdict), measured.width)}</g>
+</svg>`;
 }
 
 function renderMonoComposite(model: CompositeBadgeModel): string {
   const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
+  const rows = model.engines;
+  const showOverall = model.includeOverall || rows.length === 0;
   const tone = worstTone([
-    toneFrom(model.overallVerdict),
-    ...model.engines.map((row) => toneFrom(row.verdict)),
+    ...(showOverall ? [toneFrom(model.overallVerdict)] : []),
+    ...rows.map((row) => toneFrom(row.verdict)),
   ]);
   const headerRight = metricParts(
     model.overallVerdict,
@@ -213,12 +291,11 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
     model.checkedAt,
     false,
   ).join(" · ");
-  const rows = model.engines;
   const rowH = 18;
   const padX = 12;
-  const headerH = 24;
-  const height = headerH + (rows.length > 0 ? 6 + rows.length * rowH + 6 : 6);
-  const labelCol = Math.max(64, ...rows.map((row) => shortEngine(row.id).length * 7 + 4));
+  const headerH = showOverall ? 28 : 0;
+  const height = (showOverall ? headerH : 8) + (rows.length > 0 ? 6 + rows.length * rowH + 6 : 6);
+  const labelCol = Math.max(64, ...rows.map((row) => shortEngine(row.id).length * 7 + 4), 72);
   const metricsWidth = Math.max(
     100,
     headerRight.length * 6.5 + 12,
@@ -241,7 +318,7 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
 
   const rowsSvg = rows
     .map((row, index) => {
-      const y = headerH + 6 + index * rowH + 13;
+      const y = (showOverall ? headerH : 8) + 6 + index * rowH + 13;
       const metrics = metricParts(
         row.verdict,
         row.score,
@@ -256,14 +333,20 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
     })
     .join("");
 
+  const overallBlock = showOverall
+    ? `
+  <rect x="6" y="4" width="${width - 12}" height="22" rx="4" fill="none" stroke="#a8a29e" stroke-width="1"/>
+  <text x="${padX}" y="19" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="600" fill="#fafaf9">ai search</text>
+  <text x="${width - padX}" y="19" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="${colors.fg}">${escapeXml(headerRight)}</text>`
+    : "";
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="ai search: ${escapeXml(headerRight)}">
   <title>ai search: ${escapeXml(headerRight)}</title>
   <rect width="${width}" height="${height}" rx="6" fill="#18181b"/>
   <rect x="0" y="0" width="4" height="${height}" fill="${colors.bar}"/>
-  <text x="${padX}" y="16" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="600" fill="#fafaf9">ai search</text>
-  <text x="${width - padX}" y="16" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="${colors.fg}">${escapeXml(headerRight)}</text>
-  ${rows.length > 0 ? `<line x1="${padX}" y1="${headerH}" x2="${width - padX}" y2="${headerH}" stroke="#3f3f46"/>` : ""}
+  ${overallBlock}
+  ${rows.length > 0 && showOverall ? `<line x1="${padX}" y1="${headerH}" x2="${width - padX}" y2="${headerH}" stroke="#3f3f46"/>` : ""}
   ${rowsSvg}
 </svg>`;
 }
@@ -428,6 +511,7 @@ function resolveBadgeCopy(
 
 function shortEngine(engine: Platform): string {
   if (engine === "chatgpt") return "openai";
+  if (engine === "claude") return "anthropic";
   if (engine === "perplexity") return "pplx";
   if (engine === "gemini") return "gemini";
   return engine;

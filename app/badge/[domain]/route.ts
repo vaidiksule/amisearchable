@@ -43,6 +43,13 @@ export async function GET(
     const show = parseBadgeShow(showParam);
     const engines = parseBadgeEngines(enginesParam);
     const style = parseCompositeStyle(params.get("style"));
+    const overallParam = params.get("overall");
+    const includeOverall =
+      overallParam === "1" || overallParam === "true"
+        ? true
+        : overallParam === "0" || overallParam === "false"
+          ? false
+          : undefined;
     const model = buildCompositeBadgeModel({
       result: check,
       score,
@@ -50,6 +57,7 @@ export async function GET(
       engines,
       show,
       style,
+      includeOverall,
     });
     svg = renderCompositeBadgeSvg(model);
   } else {

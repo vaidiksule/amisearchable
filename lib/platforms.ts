@@ -7,12 +7,12 @@ import {
 } from "@/lib/crawlers";
 import { verdictFromCheck } from "@/lib/crawlers";
 
-export const PLATFORMS = ["chatgpt", "claude", "perplexity", "gemini", "grok"] as const;
+export const PLATFORMS = ["chatgpt", "gemini", "grok", "claude", "perplexity"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 export const PLATFORM_LABELS: Record<Platform, string> = {
   chatgpt: "ChatGPT",
-  claude: "Claude",
+  claude: "Anthropic",
   perplexity: "Perplexity",
   gemini: "Gemini",
   grok: "Grok",
@@ -25,6 +25,12 @@ export const CITATION_COMING_SOON = new Set<Platform>(["claude", "perplexity"]);
 export const CITATION_LIVE_PLATFORMS = PLATFORMS.filter(
   (platform) => !CITATION_COMING_SOON.has(platform),
 );
+
+/** Live engines first; coming-soon last (for UI lists). */
+export const PLATFORMS_UI_ORDER = [
+  ...CITATION_LIVE_PLATFORMS,
+  ...PLATFORMS.filter((platform) => CITATION_COMING_SOON.has(platform)),
+] as const;
 
 export function isCitationComingSoon(platform: Platform): boolean {
   return CITATION_COMING_SOON.has(platform);

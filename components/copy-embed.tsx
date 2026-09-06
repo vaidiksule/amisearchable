@@ -23,7 +23,7 @@ import {
 import {
   CITATION_LIVE_PLATFORMS,
   PLATFORM_LABELS,
-  PLATFORMS,
+  PLATFORMS_UI_ORDER,
   isCitationComingSoon,
   type Platform,
 } from "@/lib/platforms";
@@ -48,11 +48,20 @@ export function CopyEmbed({
 }) {
   const [format, setFormat] = useState<Format>("markdown");
   const [engines, setEngines] = useState<Platform[]>([...CITATION_LIVE_PLATFORMS]);
+  const [includeOverall, setIncludeOverall] = useState(false);
   const [show, setShow] = useState<BadgeShowField[]>(["ready", "score"]);
   const [style, setStyle] = useState<CompositeStyle>("classic");
   const [copied, setCopied] = useState<"snippet" | "link" | "prompt" | null>(null);
 
-  const opts = useMemo(() => ({ show, engines, style }), [show, engines, style]);
+  const opts = useMemo(
+    () => ({
+      show,
+      engines,
+      style,
+      overall: includeOverall || undefined,
+    }),
+    [show, engines, style, includeOverall],
+  );
 
   const composite = useMemo(
     () =>
@@ -63,8 +72,9 @@ export function CopyEmbed({
         engines,
         show: show.length > 0 ? show : ["ready"],
         style,
+        includeOverall: engines.length === 0 ? true : includeOverall,
       }),
-    [citations, engines, result, score, show, style],
+    [citations, engines, includeOverall, result, score, show, style],
   );
 
   const previewSrc = useMemo(() => compositeBadgeDataUri(composite), [composite]);
@@ -100,22 +110,26 @@ export function CopyEmbed({
     <section className="space-y-3">
       <h2 className="text-sm font-medium">Embed</h2>
 
-      {/* Two towers */}
-      <div className="grid gap-3 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)]">
+      {/* Two towers — narrow filters, wide preview */}
+      <div className="grid gap-3 lg:grid-cols-[11.5rem_minmax(0,1fr)]">
         {/* Left: filters */}
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <div className="space-y-6">
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="space-y-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 1 · Engines
               </p>
-              <ul className="mt-3 divide-y divide-border">
-                {PLATFORMS.map((platform) => {
+              <ul className="mt-2 divide-y divide-border">
+                {PLATFORMS_UI_ORDER.map((platform) => {
                   const soon = isCitationComingSoon(platform);
                   const checked = engines.includes(platform);
                   return (
                     <li key={platform}>
-                      <label className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-sm">
+                      <label
+                        className={`flex items-center justify-between gap-2 py-2 text-sm ${
+                          soon ? "cursor-not-allowed opacity-55" : "cursor-pointer"
+                        }`}
+                      >
                         <span className={soon ? "text-muted" : "text-foreground"}>
                           {PLATFORM_LABELS[platform]}
                           {soon ? " · soon" : null}
@@ -123,8 +137,11 @@ export function CopyEmbed({
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() => toggleEngine(platform)}
-                          className="h-4 w-4 accent-foreground"
+                          disabled={soon}
+                          onChange={() => {
+                            if (!soon) toggleEngine(platform);
+                          }}
+                          className="h-3.5 w-3.5 accent-foreground disabled:cursor-not-allowed"
                         />
                       </label>
                     </li>
@@ -137,16 +154,36 @@ export function CopyEmbed({
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 2 · Show
               </p>
-              <ul className="mt-3 divide-y divide-border">
+              <ul className="mt-2 divide-y divide-border">
+                <li>
+                  <label
+                    className={`flex items-center justify-between gap-2 py-2 text-sm ${
+                      engines.length === 0
+                        ? "cursor-not-allowed opacity-55"
+                        : "cursor-pointer"
+                    }`}
+                  >
+                    <span title="Site-wide crawl score (bordered capsule)">
+                      Overall summary
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={engines.length === 0 || includeOverall}
+                      disabled={engines.length === 0}
+                      onChange={() => setIncludeOverall((value) => !value)}
+                      className="h-3.5 w-3.5 accent-foreground disabled:cursor-not-allowed"
+                    />
+                  </label>
+                </li>
                 {BADGE_SHOW_FIELDS.map((field) => (
                   <li key={field}>
-                    <label className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-sm">
+                    <label className="flex cursor-pointer items-center justify-between gap-2 py-2 text-sm">
                       <span>{BADGE_SHOW_LABELS[field]}</span>
                       <input
                         type="checkbox"
                         checked={show.includes(field)}
                         onChange={() => toggleShow(field)}
-                        className="h-4 w-4 accent-foreground"
+                        className="h-3.5 w-3.5 accent-foreground"
                       />
                     </label>
                   </li>
@@ -184,7 +221,8 @@ export function CopyEmbed({
           </div>
 
           <p className="mt-3 text-xs text-muted">
-            Badge updates when you change engines, metrics, or style.
+            Engine scores are bot-access only. Overall (when on) is the full crawl
+            score and appears in a bordered capsule.
           </p>
         </div>
       </div>
