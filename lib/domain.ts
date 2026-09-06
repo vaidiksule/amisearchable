@@ -1,4 +1,4 @@
-import type { BadgeStyle } from "@/lib/badge-svg";
+import { BADGE_ASSET_VERSION, type BadgeStyle } from "@/lib/badge-svg";
 import { EMBED_ORIGIN } from "@/lib/config";
 
 const BLOCKED_HOSTS = new Set(["localhost", "metadata.google.internal"]);
@@ -38,9 +38,26 @@ export function embedAlt(domain: string): string {
   return `AI Searchable — AI crawler access badge for ${domain}`;
 }
 
-export function badgeSrc(domain: string, style: BadgeStyle = "shield"): string {
-  const base = `${EMBED_ORIGIN}/badge/${domain}`;
-  return style === "shield" ? base : `${base}?style=${style}`;
+export function badgeSrc(
+  domain: string,
+  style: BadgeStyle = "shield",
+  opts?: { origin?: string; bust?: string },
+): string {
+  const origin = opts?.origin ?? EMBED_ORIGIN;
+  const params = new URLSearchParams();
+  params.set("v", BADGE_ASSET_VERSION);
+  if (style !== "shield") params.set("style", style);
+  if (opts?.bust) params.set("t", opts.bust);
+  return `${origin}/badge/${domain}?${params.toString()}`;
+}
+
+/** Same-origin badge URL for app pages (homepage, report). */
+export function localBadgeSrc(
+  domain: string,
+  style: BadgeStyle = "shield",
+  bust?: string,
+): string {
+  return badgeSrc(domain, style, { origin: "", bust });
 }
 
 export function embedHtml(domain: string, style: BadgeStyle = "shield"): string {

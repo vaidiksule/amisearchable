@@ -5,6 +5,7 @@ create table if not exists public.users (
   email text not null,
   polar_customer_id text unique,
   plan text not null default 'free' check (plan in ('free', 'pro')),
+  hook_secret text unique,
   created_at timestamptz not null default now()
 );
 
@@ -19,7 +20,7 @@ create table if not exists public.checks (
   domain_id uuid not null references public.domains (id) on delete cascade,
   checked_at timestamptz not null default now(),
   results jsonb not null,
-  verdict text not null check (verdict in ('pass', 'fail')),
+  verdict text not null check (verdict in ('pass', 'fail', 'unclear')),
   llms_txt_present boolean not null,
   robots_txt_found boolean not null
 );

@@ -22,7 +22,8 @@ export async function GET(
   return new Response(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=300, s-maxage=300",
+      // Short browser cache; query ?v= bumps when artwork changes.
+      "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
     },
   });
 }

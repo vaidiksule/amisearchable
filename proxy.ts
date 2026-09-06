@@ -3,8 +3,13 @@ import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
-  // Polar (and other) webhooks must not hit auth session middleware.
-  if (url.pathname.startsWith("/api/webhooks/") || url.pathname.startsWith("/api/webhook/")) {
+  // Polar (and other) webhooks / hooks / cron must not hit auth session middleware.
+  if (
+    url.pathname.startsWith("/api/webhooks/") ||
+    url.pathname.startsWith("/api/webhook/") ||
+    url.pathname.startsWith("/api/hooks/") ||
+    url.pathname.startsWith("/api/cron/")
+  ) {
     return NextResponse.next();
   }
 
@@ -19,6 +24,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|llms-full.txt|icon|apple-icon|opengraph-image|api/webhooks/|api/webhook/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|llms-full.txt|icon|apple-icon|opengraph-image|api/webhooks/|api/webhook/|api/hooks/|api/cron/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

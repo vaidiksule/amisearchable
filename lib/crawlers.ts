@@ -19,7 +19,7 @@ export type SearchBot = (typeof SEARCH_BOTS)[number];
 export type TrainingBot = (typeof TRAINING_BOTS)[number];
 export type CrawlerName = (typeof ALL_BOTS)[number];
 export type CrawlerStatus = "allowed" | "blocked" | "unspecified";
-export type Verdict = "pass" | "fail";
+export type Verdict = "pass" | "fail" | "unclear";
 
 export const CRAWLER_NOTES: Record<CrawlerName, string> = {
   "OAI-SearchBot": "Builds the ChatGPT search index. Blocking this hides you from ChatGPT search results.",
@@ -49,6 +49,16 @@ export type CheckResult = {
   error: string | null;
 };
 
+/** Fail only when a search bot is blocked. Unclear when there is no valid robots.txt. */
+export function verdictFromCheck(input: {
+  robotsTxtFound: boolean;
+  crawlers: Record<CrawlerName, CrawlerStatus>;
+}): Verdict {
+  if (!input.robotsTxtFound) return "unclear";
+  return SEARCH_BOTS.some((bot) => input.crawlers[bot] === "blocked") ? "fail" : "pass";
+}
+
+/** @deprecated Prefer verdictFromCheck */
 export function verdictFromCrawlers(crawlers: Record<CrawlerName, CrawlerStatus>): Verdict {
   return SEARCH_BOTS.some((bot) => crawlers[bot] === "blocked") ? "fail" : "pass";
 }

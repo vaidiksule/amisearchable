@@ -1,6 +1,6 @@
 import { MIN_RECHECK_MS } from "@/lib/config";
 import { runLiveCheck } from "@/lib/check-engine";
-import type { CheckResult } from "@/lib/crawlers";
+import { verdictFromCheck, type CheckResult } from "@/lib/crawlers";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type LoadedCheck = CheckResult & {
@@ -32,11 +32,15 @@ export async function getLatestCheck(domain: string): Promise<CheckResult | null
   return raw ? normalizeCheckResult(raw) : null;
 }
 
-/** Older cached checks may omit newer file fields. */
+/** Older cached checks may omit newer file fields or use a pre-unclear verdict. */
 export function normalizeCheckResult(result: CheckResult): CheckResult {
   const origin = `https://${result.domain}`;
   return {
     ...result,
+    verdict: verdictFromCheck({
+      robotsTxtFound: result.robotsTxtFound,
+      crawlers: result.crawlers,
+    }),
     llmsFullTxtPresent: result.llmsFullTxtPresent ?? false,
     llmsFullTxtUrl: result.llmsFullTxtUrl ?? null,
     sitemapXmlPresent: result.sitemapXmlPresent ?? false,

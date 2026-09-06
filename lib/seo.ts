@@ -2,9 +2,9 @@ import { EMBED_ORIGIN } from "@/lib/config";
 
 export const SITE_NAME = "amisearchable.cc";
 export const SITE_TITLE =
-  "AI Searchable — Check if GPTBot, ClaudeBot and PerplexityBot can access your site";
+  "AI Searchable — README badge for AI search readiness";
 export const SITE_DESCRIPTION =
-  "Free AI crawler checker. See if GPTBot, ChatGPT-User, ClaudeBot, and PerplexityBot are blocked in robots.txt, then embed an AI search status badge in your README.";
+  "A README badge that shows if AI search can reach your site. Check robots.txt once, embed the badge, and skip re-checking after every change. Pro re-checks daily.";
 
 export const CURATED_REPORT_DOMAINS = [
   "amisearchable.cc",

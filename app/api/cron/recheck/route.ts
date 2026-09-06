@@ -1,7 +1,5 @@
-import { sendStatusChangeEmail } from "@/lib/alerts";
-import { getLatestCheck, listMonitoredHostnames, saveCheck } from "@/lib/checks";
-import { runLiveCheck } from "@/lib/check-engine";
-import { monitoringEmails } from "@/lib/monitors";
+import { listMonitoredHostnames } from "@/lib/checks";
+import { recheckHostname } from "@/lib/recheck";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -16,19 +14,17 @@ export async function GET(request: Request) {
   const hostnames = await listMonitoredHostnames();
   let checked = 0;
   let alerted = 0;
+  let skipped = 0;
 
   for (const hostname of hostnames) {
-    const previous = await getLatestCheck(hostname);
-    const next = await runLiveCheck(hostname);
-    await saveCheck(next);
-    checked += 1;
-
-    if (previous && previous.verdict !== next.verdict) {
-      const emails = await monitoringEmails(hostname);
-      await Promise.all(emails.map((email) => sendStatusChangeEmail(email, previous, next)));
-      alerted += emails.length;
+    const outcome = await recheckHostname(hostname, { force: true });
+    if (outcome.skipped) {
+      skipped += 1;
+      continue;
     }
+    checked += 1;
+    alerted += outcome.alerted;
   }
 
-  return Response.json({ ok: true, checked, alerted });
+  return Response.json({ ok: true, checked, alerted, skipped });
 }

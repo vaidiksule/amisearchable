@@ -2,7 +2,7 @@ import robotsParser from "robots-parser";
 import {
   ALL_BOTS,
   emptyCrawlers,
-  verdictFromCrawlers,
+  verdictFromCheck,
   type CheckResult,
   type CrawlerName,
   type CrawlerStatus,
@@ -27,7 +27,7 @@ export async function runLiveCheck(domain: string): Promise<CheckResult> {
   let robotsTxtFound = false;
   let robotsError: string | null = null;
 
-  if (robotsResult.ok && robotsResult.text.trim()) {
+  if (robotsResult.ok && isRobotsTxt(robotsResult.text)) {
     robotsTxtFound = true;
     const robots = robotsParser(robotsUrl, robotsResult.text);
     const origin = `${httpsOrigin}/`;
@@ -35,6 +35,8 @@ export async function runLiveCheck(domain: string): Promise<CheckResult> {
     for (const bot of ALL_BOTS) {
       crawlers[bot] = statusForBot(robots, origin, bot);
     }
+  } else if (robotsResult.ok && robotsResult.text.trim()) {
+    robotsError = "robots.txt returned a webpage, not a robots.txt file";
   } else if (robotsResult.ok) {
     robotsTxtFound = true;
   } else if (robotsResult.status > 0 && robotsResult.status !== 404) {
@@ -49,7 +51,7 @@ export async function runLiveCheck(domain: string): Promise<CheckResult> {
 
   return {
     domain,
-    verdict: verdictFromCrawlers(crawlers),
+    verdict: verdictFromCheck({ robotsTxtFound, crawlers }),
     crawlers,
     llmsTxtPresent,
     llmsTxtUrl: llmsTxtPresent ? llmsUrl : null,
@@ -73,6 +75,24 @@ function statusForBot(
   if (allowed === false) return "blocked";
   if (allowed === true) return "allowed";
   return "unspecified";
+}
+
+/** Reject HTML soft-404s that many hosts serve as HTTP 200 for /robots.txt. */
+export function isRobotsTxt(body: string): boolean {
+  const trimmed = body.trim();
+  if (!trimmed) return false;
+  const head = trimmed.slice(0, 200).toLowerCase();
+  if (
+    head.startsWith("<!doctype") ||
+    head.startsWith("<html") ||
+    head.startsWith("<head") ||
+    head.includes("<html") ||
+    head.startsWith("{")
+  ) {
+    return false;
+  }
+  // Any non-HTML plain text is acceptable; crawlers parse whatever is there.
+  return true;
 }
 
 function isLlmsTxt(body: string): boolean {

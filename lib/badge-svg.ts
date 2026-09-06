@@ -4,6 +4,9 @@ import { formatBadgeAge } from "@/lib/time";
 export const BADGE_STYLES = ["shield", "pill", "terminal", "outline"] as const;
 export type BadgeStyle = (typeof BADGE_STYLES)[number];
 
+/** Bump when badge artwork changes so browsers/CDNs drop stale SVGs. */
+export const BADGE_ASSET_VERSION = "3";
+
 export const BADGE_STYLE_META: Record<
   BadgeStyle,
   { label: string; description: string }
@@ -58,11 +61,14 @@ export function badgeLabel(
 ): string {
   const age = formatBadgeAge(checkedAt);
   if (style === "terminal") {
+    if (verdict === "unclear") return `$ ai-search: unclear · ${age}`;
     return verdict === "pass" ? `$ ai-search: ready · ${age}` : `$ ai-search: blocked · ${age}`;
   }
   if (style === "pill" || style === "outline") {
+    if (verdict === "unclear") return `No robots.txt · ${age}`;
     return verdict === "pass" ? `AI Searchable · ${age}` : `Blocks AI Search · ${age}`;
   }
+  if (verdict === "unclear") return `AI Searchable: unclear · ${age}`;
   return verdict === "pass" ? `AI Searchable: ready · ${age}` : `AI Searchable: blocked · ${age}`;
 }
 
@@ -77,12 +83,25 @@ export function badgeDataUri(
 function shieldBadge(verdict: Verdict | "pending", age: string): string {
   const tone = toneFrom(verdict);
   const status =
-    verdict === "pending" ? "pending" : verdict === "pass" ? `ready · ${age}` : `blocked · ${age}`;
+    tone === "unclear"
+      ? `unclear · ${age}`
+      : tone === "pending"
+        ? "pending"
+        : tone === "ready"
+          ? `ready · ${age}`
+          : `blocked · ${age}`;
   const label = "ai search";
   const colors = {
     ready: "#16a34a",
     blocked: "#dc2626",
+    unclear: "#ca8a04",
     pending: "#57534e",
+  };
+  const markFill = {
+    ready: "#34D399",
+    blocked: "#F87171",
+    unclear: "#FACC15",
+    pending: "#A8A29E",
   };
   const markSize = 14;
   const markPad = 3;
@@ -93,6 +112,14 @@ function shieldBadge(verdict: Verdict | "pending", age: string): string {
   const markX = markPad;
   const markY = (20 - markSize) / 2;
   const textX = markBlock + (labelWidth - markBlock) / 2;
+  const markIcon =
+    tone === "blocked"
+      ? `<path d="M4.2 4.2 L9.8 9.8 M9.8 4.2 L4.2 9.8" stroke="#450a0a" stroke-width="1.7" stroke-linecap="round"/>`
+      : tone === "unclear"
+        ? `<circle cx="7" cy="7" r="2.4" fill="#713f12"/>`
+        : tone === "pending"
+          ? `<path d="M4 7 H10" stroke="#1c1917" stroke-width="1.7" stroke-linecap="round"/>`
+          : `<path d="M3.5 7.2 L6 9.6 L10.6 4.4" stroke="#0B0D10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${label}: ${status}">
@@ -101,8 +128,8 @@ function shieldBadge(verdict: Verdict | "pending", age: string): string {
   <rect rx="3" x="${labelWidth}" width="${statusWidth}" height="20" fill="${colors[tone]}"/>
   <rect x="${labelWidth}" width="4" height="20" fill="${colors[tone]}"/>
   <g transform="translate(${markX} ${markY})">
-    <rect width="${markSize}" height="${markSize}" rx="3.5" fill="#34D399"/>
-    <path d="M3.5 7.2 L6 9.6 L10.6 4.4" stroke="#0B0D10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <rect width="${markSize}" height="${markSize}" rx="3.5" fill="${markFill[tone]}"/>
+    ${markIcon}
   </g>
   <g fill="#fff" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11">
     <text x="${textX}" y="14">${escapeXml(label)}</text>
@@ -112,16 +139,20 @@ function shieldBadge(verdict: Verdict | "pending", age: string): string {
 }
 
 function pillBadge(verdict: Verdict | "pending", age: string): string {
-  const pass = verdict === "pass" || verdict === "pending";
+  const tone = toneFrom(verdict);
   const label =
-    verdict === "pending"
-      ? "AI Searchable · pending"
-      : pass
-        ? `AI Searchable · ${age}`
-        : `Blocks AI Search · ${age}`;
-  const bg = pass ? "#dcfce7" : "#fee2e2";
-  const fg = pass ? "#166534" : "#991b1b";
-  const icon = pass ? "✓" : "×";
+    tone === "unclear"
+      ? `No robots.txt · ${age}`
+      : tone === "pending"
+        ? "AI Searchable · pending"
+        : tone === "ready"
+          ? `AI Searchable · ${age}`
+          : `Blocks AI Search · ${age}`;
+  const bg =
+    tone === "unclear" ? "#fef9c3" : tone === "blocked" ? "#fee2e2" : "#dcfce7";
+  const fg =
+    tone === "unclear" ? "#854d0e" : tone === "blocked" ? "#991b1b" : "#166534";
+  const icon = tone === "blocked" ? "×" : tone === "unclear" ? "●" : "✓";
   const width = Math.round(Math.max(128, label.length * 7.1 + 42));
   const height = 24;
 
@@ -135,12 +166,14 @@ function pillBadge(verdict: Verdict | "pending", age: string): string {
 }
 
 function terminalBadge(verdict: Verdict | "pending", age: string): string {
+  const tone = toneFrom(verdict);
   const status =
-    verdict === "pending" ? "pending" : verdict === "pass" ? "ready" : "blocked";
+    tone === "unclear" ? "unclear" : tone === "pending" ? "pending" : tone === "ready" ? "ready" : "blocked";
   const label = `$ ai-search: ${status}`;
   const width = Math.round(Math.max(138, label.length * 7.4 + 28));
   const height = 24;
-  const color = verdict === "fail" ? "#f87171" : "#4ade80";
+  const color =
+    tone === "blocked" ? "#f87171" : tone === "unclear" ? "#facc15" : "#4ade80";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(label)} · ${age}">
@@ -151,12 +184,14 @@ function terminalBadge(verdict: Verdict | "pending", age: string): string {
 }
 
 function outlineBadge(verdict: Verdict | "pending", age: string): string {
-  const pass = verdict !== "fail";
-  const title = pass ? "AI Searchable" : "Blocks AI Search";
+  const tone = toneFrom(verdict);
+  const title =
+    tone === "unclear" ? "No robots.txt" : tone === "blocked" ? "Blocks AI Search" : "AI Searchable";
   const ageLabel = `· ${age}`;
   const width = Math.round(Math.max(148, title.length * 7.2 + ageLabel.length * 6.2 + 40));
   const height = 28;
-  const dot = pass ? "#16a34a" : "#dc2626";
+  const dot =
+    tone === "unclear" ? "#ca8a04" : tone === "blocked" ? "#dc2626" : "#16a34a";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${title} ${ageLabel}">
@@ -168,8 +203,9 @@ function outlineBadge(verdict: Verdict | "pending", age: string): string {
 </svg>`;
 }
 
-function toneFrom(verdict: Verdict | "pending"): "ready" | "blocked" | "pending" {
+function toneFrom(verdict: Verdict | "pending"): "ready" | "blocked" | "unclear" | "pending" {
   if (verdict === "pending") return "pending";
+  if (verdict === "unclear") return "unclear";
   return verdict === "pass" ? "ready" : "blocked";
 }
 

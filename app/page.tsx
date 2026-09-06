@@ -4,7 +4,7 @@ import Link from "next/link";
 import { DomainForm } from "@/components/domain-form";
 import { JsonLd } from "@/components/json-ld";
 import { StaticBadge } from "@/components/static-badge";
-import { embedAlt } from "@/lib/domain";
+import { embedAlt, localBadgeSrc } from "@/lib/domain";
 import { GUIDES } from "@/lib/guides";
 import { HOME_FAQS, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, absoluteUrl } from "@/lib/seo";
 
@@ -72,33 +72,24 @@ export default function Home() {
 
       <section className="pt-10 pb-10 sm:pt-14">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Is your site visible to AI search?
+          A README badge for AI search readiness
         </h1>
         <p className="mt-4 max-w-xl text-sm leading-6 text-muted sm:text-base">
-          Check in 5 seconds. This AI crawler checker reads robots.txt to see if GPTBot,
-          ChatGPT-User, and PerplexityBot can access your site — then gives you a badge for
-          your README.
+          Put it in your README. It shows whether AI search can reach your site — so you
+          don&apos;t re-check robots.txt after every deploy.
         </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <StaticBadge verdict="pass" className="h-6" />
+          <StaticBadge verdict="fail" className="h-6" />
+        </div>
         <div className="mt-8">
           <DomainForm />
         </div>
       </section>
 
       <section className="border-t border-border py-10 sm:py-14">
-        <h2 className="text-sm font-medium">You might be invisible to AI search right now</h2>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
-          robots.txt gets overwritten more often than you&apos;d think — a new theme, a new
-          host, a &quot;cleanup&quot; from an agency. Most people find out they&apos;re blocked by
-          accident, months later. Check now, know for sure.
-        </p>
-      </section>
-
-      <section className="border-t border-border py-10 sm:py-14">
-        <h2 className="text-sm font-medium">See it in a real README</h2>
-        <p className="mt-2 text-sm text-muted">
-          Not a mockup. This is a real badge, in a real README.
-        </p>
-        <figure className="mt-6 overflow-hidden rounded-lg border border-border bg-[#0d1117]">
+        <h2 className="text-sm font-medium">In a real README</h2>
+        <figure className="mt-4 overflow-hidden rounded-lg border border-border bg-[#0d1117]">
           <Image
             src="/proof/github-readme-badge.png"
             alt="GitHub README showing a live AI Searchable badge: ai search ready"
@@ -107,23 +98,11 @@ export default function Home() {
             className="h-auto w-full"
             priority={false}
           />
-          <figcaption className="border-t border-border px-4 py-3 text-xs text-muted">
-            From{" "}
-            <a
-              href="https://github.com/vaidiksule/roast-the-page"
-              className="text-foreground underline underline-offset-4"
-              target="_blank"
-              rel="noreferrer"
-            >
-              github.com/vaidiksule/roast-the-page
-            </a>
-          </figcaption>
         </figure>
       </section>
 
       <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">Live examples</h2>
-        <p className="mt-2 text-sm text-muted">Real domains. Real robots.txt. Live badges.</p>
         <div className="mt-4 space-y-3">
           {EXAMPLES.map((example) => (
             <Link
@@ -131,13 +110,10 @@ export default function Home() {
               href={`/report/${example.domain}`}
               className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="min-w-0">
-                <p className="truncate font-mono text-sm">{example.domain}</p>
-                <p className="mt-1 text-xs text-muted">{example.note}</p>
-              </div>
+              <p className="truncate font-mono text-sm">{example.domain}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/badge/${example.domain}`}
+                src={localBadgeSrc(example.domain)}
                 alt={embedAlt(example.domain)}
                 className="h-5 w-auto max-w-full self-start sm:self-center"
               />
@@ -147,89 +123,26 @@ export default function Home() {
       </section>
 
       <section className="border-t border-border py-10 sm:py-14">
-        <h2 className="text-sm font-medium">Badge styles</h2>
-        <p className="mt-2 text-sm text-muted">
-          Same status URL. Pick a look for your README or footer.
-        </p>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <p className="text-xs text-muted">Pass</p>
-            <div className="mt-3 overflow-x-auto">
-              <StaticBadge verdict="pass" className="h-6" />
-            </div>
-            <p className="mt-3 text-sm">AI-Search Ready</p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <p className="text-xs text-muted">Fail</p>
-            <div className="mt-3 overflow-x-auto">
-              <StaticBadge verdict="fail" className="h-6" />
-            </div>
-            <p className="mt-3 text-sm">Blocking AI Search</p>
-          </div>
-        </div>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Pill</p>
-            <div className="mt-3 overflow-x-auto">
-              <StaticBadge verdict="pass" style="pill" className="h-6" />
-            </div>
-          </div>
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Terminal</p>
-            <div className="mt-3 overflow-x-auto">
-              <StaticBadge verdict="pass" style="terminal" className="h-6" />
-            </div>
-          </div>
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Outline</p>
-            <div className="mt-3 overflow-x-auto">
-              <StaticBadge verdict="pass" style="outline" className="h-7" />
-            </div>
-          </div>
+        <h2 className="text-sm font-medium">Styles</h2>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <StaticBadge verdict="pass" className="h-5" />
+          <StaticBadge verdict="pass" style="pill" className="h-6" />
+          <StaticBadge verdict="pass" style="terminal" className="h-6" />
+          <StaticBadge verdict="pass" style="outline" className="h-6" />
         </div>
       </section>
 
       <section className="border-t border-border py-10 sm:py-14">
-        <h2 className="text-sm font-medium">What we check</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          Search bots only: OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot,
-          Claude-User. Training crawlers like GPTBot and ClaudeBot are listed on the report
-          but do not fail the badge. Reports also note{" "}
-          <code className="font-mono">robots.txt</code>,{" "}
-          <code className="font-mono">llms.txt</code>,{" "}
-          <code className="font-mono">llms-full.txt</code>, and{" "}
-          <code className="font-mono">sitemap.xml</code>.{" "}
-          <Link href="/guides/gptbot-vs-chatgpt-user" className="text-foreground underline underline-offset-4">
-            Why that split matters
-          </Link>
-          . This site publishes{" "}
-          <a href="/llms.txt" className="text-foreground underline underline-offset-4">
-            llms.txt
-          </a>
-          ,{" "}
-          <a href="/llms-full.txt" className="text-foreground underline underline-offset-4">
-            llms-full.txt
-          </a>
-          ,{" "}
-          <a href="/robots.txt" className="text-foreground underline underline-offset-4">
-            robots.txt
-          </a>
-          , and a{" "}
-          <a href="/sitemap.xml" className="text-foreground underline underline-offset-4">
-            sitemap
-          </a>
-          .
-        </p>
+        <h2 className="text-sm font-medium">How it works</h2>
+        <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-muted">
+          <li>Check your domain — we read robots.txt, llms.txt, and sitemap.</li>
+          <li>Copy the badge into your README.</li>
+          <li>Optional Pro: we re-check daily and email you if status changes.</li>
+        </ol>
       </section>
 
       <section className="border-t border-border py-10 sm:py-14">
         <h2 className="text-sm font-medium">Guides</h2>
-        <p className="mt-2 text-sm text-muted">
-          AI search visibility, crawler access, and llms.txt — written for the terms people
-          actually search.
-        </p>
         <ul className="mt-4 space-y-3">
           {GUIDES.slice(0, 4).map((guide) => (
             <li key={guide.slug}>
@@ -267,9 +180,7 @@ export default function Home() {
 
       <section className="border-t border-border py-10 sm:py-14">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">
-            Badge is free. Pro is $5/mo to keep it fresh.
-          </p>
+          <p className="text-sm text-muted">Free badge. Pro keeps it updated — $5/mo.</p>
           <Link href="/pricing" className="text-sm text-foreground underline underline-offset-4">
             Pricing
           </Link>

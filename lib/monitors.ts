@@ -1,10 +1,11 @@
 import { PRO_DOMAIN_LIMIT } from "@/lib/config";
+import type { Verdict } from "@/lib/crawlers";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type MonitorRow = {
   hostname: string;
   createdAt: string;
-  verdict: "pass" | "fail" | null;
+  verdict: Verdict | null;
   checkedAt: string | null;
 };
 
@@ -46,7 +47,7 @@ export async function listMonitors(userId: string): Promise<MonitorRow[]> {
       return {
         hostname,
         createdAt: row.created_at,
-        verdict: (check?.verdict as "pass" | "fail" | undefined) ?? null,
+        verdict: (check?.verdict as Verdict | undefined) ?? null,
         checkedAt: check?.checked_at ?? null,
       };
     }),

@@ -6,7 +6,7 @@ import { PageFrame } from "@/components/page-frame";
 import { badgeLabel } from "@/lib/badge-svg";
 import { getLatestCheck, getOrCreateCheck } from "@/lib/checks";
 import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
-import { normalizeDomain } from "@/lib/domain";
+import { localBadgeSrc, normalizeDomain } from "@/lib/domain";
 import { SITE_NAME, absoluteUrl } from "@/lib/seo";
 import { formatCheckedAt } from "@/lib/time";
 
@@ -29,9 +29,11 @@ export async function generateMetadata(
   const verdictLine =
     cached?.verdict === "fail"
       ? `${domain} is blocking at least one AI search bot.`
-      : cached?.verdict === "pass"
-        ? `${domain} allows AI search bots.`
-        : `AI crawler access report for ${domain}.`;
+      : cached?.verdict === "unclear"
+        ? `${domain} has no valid robots.txt — AI search status is unclear.`
+        : cached?.verdict === "pass"
+          ? `${domain} allows AI search bots.`
+          : `AI crawler access report for ${domain}.`;
   const llmsLine = cached
     ? cached.llmsTxtPresent
       ? " llms.txt was found."
@@ -177,10 +179,15 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
         </p>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/badge/${domain}?t=${encodeURIComponent(result.checkedAt)}`}
+          src={localBadgeSrc(domain, "shield", result.checkedAt)}
           alt={badgeLabel(result.verdict, result.checkedAt)}
           className="mt-4 h-6"
         />
+        {!result.robotsTxtFound ? (
+          <p className="mt-4 text-sm text-muted">
+            No valid robots.txt — bots are allowed by default until you publish one.
+          </p>
+        ) : null}
       </div>
 
       <section className="mt-8">
