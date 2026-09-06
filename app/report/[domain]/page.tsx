@@ -3,10 +3,10 @@ import Link from "next/link";
 import { CopyEmbed } from "@/components/copy-embed";
 import { JsonLd } from "@/components/json-ld";
 import { PageFrame } from "@/components/page-frame";
-import { badgeLabel } from "@/lib/badge-svg";
+import { badgeDataUri, badgeLabel } from "@/lib/badge-svg";
 import { getLatestCheck, getOrCreateCheck } from "@/lib/checks";
 import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
-import { localBadgeSrc, normalizeDomain } from "@/lib/domain";
+import { normalizeDomain } from "@/lib/domain";
 import { SITE_NAME, absoluteUrl } from "@/lib/seo";
 import { formatCheckedAt } from "@/lib/time";
 
@@ -129,7 +129,13 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
   }
 
   const result = await getOrCreateCheck(domain, { fresh });
-  const passed = result.verdict === "pass";
+  const verdictTone = result.verdict === "pass" ? "text-accent" : "text-warn";
+  const verdictTitle =
+    result.verdict === "pass"
+      ? "AI-Search Ready"
+      : result.verdict === "unclear"
+        ? "Unclear / no robots.txt"
+        : "Blocking AI Search";
 
   return (
     <PageFrame>
@@ -174,18 +180,17 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
       </div>
 
       <div className="mt-8 rounded-lg border border-border bg-surface p-6">
-        <p className={`text-sm font-medium ${passed ? "text-accent" : "text-warn"}`}>
-          {passed ? "AI-Search Ready" : "Blocking AI Search"}
-        </p>
+        <p className={`text-sm font-medium ${verdictTone}`}>{verdictTitle}</p>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={localBadgeSrc(domain, "shield", result.checkedAt)}
+          src={badgeDataUri(result.verdict, result.checkedAt)}
           alt={badgeLabel(result.verdict, result.checkedAt)}
           className="mt-4 h-6"
         />
         {!result.robotsTxtFound ? (
           <p className="mt-4 text-sm text-muted">
-            No valid robots.txt — bots are allowed by default until you publish one.
+            No valid robots.txt found. Bots may crawl by default, but we can’t confirm
+            search access until you publish a real robots.txt.
           </p>
         ) : null}
       </div>

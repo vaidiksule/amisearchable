@@ -38,16 +38,21 @@ export async function listMonitors(userId: string): Promise<MonitorRow[]> {
 
       const { data: check } = await admin
         .from("checks")
-        .select("verdict, checked_at")
+        .select("verdict, checked_at, robots_txt_found")
         .eq("domain_id", domainRow.id)
         .order("checked_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
+      let verdict: Verdict | null = (check?.verdict as Verdict | undefined) ?? null;
+      if (check && check.robots_txt_found === false) {
+        verdict = "unclear";
+      }
+
       return {
         hostname,
         createdAt: row.created_at,
-        verdict: (check?.verdict as Verdict | undefined) ?? null,
+        verdict,
         checkedAt: check?.checked_at ?? null,
       };
     }),

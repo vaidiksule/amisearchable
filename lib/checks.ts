@@ -75,7 +75,14 @@ export async function saveCheck(result: CheckResult): Promise<void> {
   });
 
   if (error) {
-    console.error("Failed to save check", error);
+    console.error("Failed to save check", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      verdict: result.verdict,
+      domain: result.domain,
+    });
   }
 }
 

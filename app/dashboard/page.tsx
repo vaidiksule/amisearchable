@@ -3,10 +3,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { removeMonitoredDomain } from "@/app/actions/monitors";
 import { AddDomainForm } from "@/components/add-domain-form";
+import { DeployHookPanel } from "@/components/deploy-hook-panel";
 import { PageFrame } from "@/components/page-frame";
 import { getCurrentProfile } from "@/lib/auth";
 import { syncUserPlanFromPolar } from "@/lib/billing";
-import { PRO_DOMAIN_LIMIT } from "@/lib/config";
+import { PRO_DOMAIN_LIMIT, siteUrl } from "@/lib/config";
+import { ensureHookSecret } from "@/lib/hooks";
 import { listMonitors } from "@/lib/monitors";
 import { formatCheckedAt } from "@/lib/time";
 
@@ -42,6 +44,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   }
 
   const monitors = profile.plan === "pro" ? await listMonitors(profile.id) : [];
+  const hookSecret =
+    profile.plan === "pro" ? ((await ensureHookSecret(profile.id)) ?? "") : "";
 
   return (
     <PageFrame>
@@ -132,6 +136,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                             <span className="text-accent">Ready</span>
                           ) : monitor.verdict === "fail" ? (
                             <span className="text-warn">Blocking</span>
+                          ) : monitor.verdict === "unclear" ? (
+                            <span className="text-warn">Unclear</span>
                           ) : (
                             <span className="text-muted">Pending</span>
                           )}
@@ -167,6 +173,14 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               )}
             </>
           )}
+
+          {hookSecret ? (
+            <DeployHookPanel
+              secret={hookSecret}
+              domains={monitors.map((m) => m.hostname)}
+              siteOrigin={siteUrl()}
+            />
+          ) : null}
         </>
       )}
     </PageFrame>

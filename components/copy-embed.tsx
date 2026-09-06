@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { StaticBadge } from "@/components/static-badge";
 import { BADGE_STYLES, type BadgeStyle } from "@/lib/badge-svg";
+import type { Verdict } from "@/lib/crawlers";
 import { embedAgentPrompt, embedHtml, embedMarkdown } from "@/lib/domain";
 
 type Format = "html" | "markdown";
@@ -13,7 +14,7 @@ export function CopyEmbed({
   checkedAt,
 }: {
   domain: string;
-  verdict: "pass" | "fail";
+  verdict: Verdict;
   checkedAt?: string;
 }) {
   const [format, setFormat] = useState<Format>("markdown");

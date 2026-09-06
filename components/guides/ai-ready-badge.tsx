@@ -14,6 +14,7 @@ export function AiReadyBadgeGuide() {
         </p>
         <div className="flex flex-wrap gap-3">
           <StaticBadge verdict="pass" className="h-5" />
+          <StaticBadge verdict="unclear" className="h-5" />
           <StaticBadge verdict="fail" className="h-5" />
           <StaticBadge verdict="pass" style="pill" className="h-6" />
           <StaticBadge verdict="pass" style="terminal" className="h-6" />
@@ -57,9 +58,9 @@ export function AiReadyBadgeGuide() {
 
       <GuideSection title="What “ready” means">
         <p>
-          Ready means the search and fetch bots are not blocked. It does not mean you will
-          appear in ChatGPT or Perplexity answers. Training crawlers can still be blocked
-          without failing the badge.{" "}
+          Ready means a valid robots.txt exists and search/fetch bots are not blocked. No
+          robots.txt (or an HTML soft-404) is unclear — yellow — not green. Training
+          crawlers can still be blocked without failing the badge.{" "}
           <Link href="/guides/gptbot-vs-chatgpt-user" className="text-foreground underline underline-offset-4">
             Read the bot split
           </Link>

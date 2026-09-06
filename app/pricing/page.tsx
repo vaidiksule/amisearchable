@@ -43,6 +43,7 @@ export default async function PricingPage(props: PageProps<"/pricing">) {
           <ul className="mt-4 space-y-2 text-sm text-muted">
             <li>Daily auto refresh</li>
             <li>Email when status changes</li>
+            <li>Optional deploy / GitHub hook</li>
             <li>Same badge URL</li>
           </ul>
           {profile?.plan === "pro" ? (
@@ -66,6 +67,7 @@ export default async function PricingPage(props: PageProps<"/pricing">) {
         <p className="text-xs text-muted">Badge stays the same after upgrade</p>
         <div className="mt-3 flex flex-wrap gap-3">
           <StaticBadge verdict="pass" className="h-5" />
+          <StaticBadge verdict="unclear" className="h-5" />
           <StaticBadge verdict="fail" className="h-5" />
         </div>
       </div>

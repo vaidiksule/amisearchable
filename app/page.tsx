@@ -80,6 +80,7 @@ export default function Home() {
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <StaticBadge verdict="pass" className="h-6" />
+          <StaticBadge verdict="unclear" className="h-6" />
           <StaticBadge verdict="fail" className="h-6" />
         </div>
         <div className="mt-8">
@@ -137,7 +138,9 @@ export default function Home() {
         <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-muted">
           <li>Check your domain — we read robots.txt, llms.txt, and sitemap.</li>
           <li>Copy the badge into your README.</li>
-          <li>Optional Pro: we re-check daily and email you if status changes.</li>
+          <li>
+            Optional Pro: daily re-check + email on change, or hit a deploy hook after you ship.
+          </li>
         </ol>
       </section>
 
