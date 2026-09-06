@@ -221,8 +221,9 @@ export function CopyEmbed({
           </div>
 
           <p className="mt-3 text-xs text-muted">
-            Engine scores are bot-access only. Overall (when on) is the full crawl
-            score and appears in a bordered capsule.
+            Classic stacks shields; Inline lays them in a row; Round pills uses
+            name + score chips. Overall (when on) is the full crawl score in a
+            bordered capsule — engines stay bot-access only.
           </p>
         </div>
       </div>

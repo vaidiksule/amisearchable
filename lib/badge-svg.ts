@@ -11,12 +11,13 @@ export const BADGE_STYLES = ["shield", "pill", "terminal", "outline"] as const;
 export type BadgeStyle = (typeof BADGE_STYLES)[number];
 
 /** Layouts for the multi-engine composite badge. */
-export const COMPOSITE_STYLES = ["classic", "compact", "mono"] as const;
+export const COMPOSITE_STYLES = ["classic", "compact", "pills", "mono"] as const;
 export type CompositeStyle = (typeof COMPOSITE_STYLES)[number];
 
 export const COMPOSITE_STYLE_LABELS: Record<CompositeStyle, string> = {
   classic: "Classic shields",
-  compact: "Single shield",
+  compact: "Inline shields",
+  pills: "Round pills",
   mono: "Dark panel",
 };
 
@@ -27,7 +28,7 @@ export const BADGE_SHOW_FIELDS = ["ready", "score", "age", "cited"] as const;
 export type BadgeShowField = (typeof BADGE_SHOW_FIELDS)[number];
 
 /** Bump when badge artwork changes so browsers/CDNs drop stale SVGs. */
-export const BADGE_ASSET_VERSION = "8";
+export const BADGE_ASSET_VERSION = "9";
 
 export const BADGE_SHOW_LABELS: Record<BadgeShowField, string> = {
   ready: "Ready",
@@ -79,9 +80,10 @@ export function parseCompositeStyle(value: string | null | undefined): Composite
   if (value && (COMPOSITE_STYLES as readonly string[]).includes(value)) {
     return value as CompositeStyle;
   }
-  // Legacy shield/pill map onto composite layouts.
+  // Legacy single-badge styles map onto composite layouts.
   if (value === "terminal") return "mono";
-  if (value === "pill" || value === "outline") return "compact";
+  if (value === "pill") return "pills";
+  if (value === "outline") return "compact";
   return "classic";
 }
 
@@ -114,6 +116,7 @@ export function parseBadgeEngines(value: string | null | undefined): Platform[] 
 export function renderCompositeBadgeSvg(model: CompositeBadgeModel): string {
   const style = model.style ?? "classic";
   if (style === "mono") return renderMonoComposite(model);
+  if (style === "pills") return renderPillsComposite(model);
   if (style === "compact") return renderCompactComposite(model);
   return renderClassicComposite(model);
 }
@@ -140,7 +143,7 @@ export function compositeBadgeLabel(model: CompositeBadgeModel): string {
       row.verdict,
       row.score,
       row.citations,
-      model.show.filter((field) => field !== "age"),
+      model.show,
       model.checkedAt,
       Boolean(row.comingSoon),
     ).join(" · ");
@@ -153,10 +156,17 @@ export function compositeBadgeDataUri(model: CompositeBadgeModel): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(renderCompositeBadgeSvg(model))}`;
 }
 
-/** Classic shields — optional bordered overall + engine rows. */
-function renderClassicComposite(model: CompositeBadgeModel): string {
+type CompositeLine = {
+  label: string;
+  status: string;
+  tone: Tone;
+  overall?: boolean;
+  score?: number;
+};
+
+function compositeLines(model: CompositeBadgeModel): CompositeLine[] {
   const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
-  const lines: { label: string; status: string; tone: Tone; overall?: boolean }[] = [];
+  const lines: CompositeLine[] = [];
 
   if (model.includeOverall || model.engines.length === 0) {
     lines.push({
@@ -171,6 +181,7 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
       ).join(" · "),
       tone: toneFrom(model.overallVerdict),
       overall: true,
+      score: model.overallScore,
     });
   }
 
@@ -181,7 +192,7 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
         row.verdict,
         row.score,
         row.citations,
-        show.filter((field) => field !== "age"),
+        show,
         model.checkedAt,
         Boolean(row.comingSoon),
       ).join(" · "),
@@ -189,6 +200,7 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
         row.comingSoon && show.includes("cited") && show.length === 1
           ? ("pending" as Tone)
           : toneFrom(row.verdict),
+      score: row.score,
     });
   }
 
@@ -198,15 +210,22 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
       status: "pending",
       tone: "pending",
       overall: true,
+      score: 0,
     });
   }
+  return lines;
+}
 
+/** Classic — stacked shields; overall gets a border. */
+function renderClassicComposite(model: CompositeBadgeModel): string {
+  const lines = compositeLines(model);
   const gap = 6;
   const rowH = 20;
   const borderPad = 3;
   const parts = lines.map((line) => measureShield(line.label, line.status || "—"));
   const innerWidth = Math.max(...parts.map((part) => part.width));
-  const width = innerWidth + (lines.some((line) => line.overall) ? borderPad * 2 : 0);
+  const hasOverall = lines.some((line) => line.overall);
+  const width = innerWidth + (hasOverall ? borderPad * 2 : 0);
 
   let y = 0;
   const bodyParts: string[] = [];
@@ -220,7 +239,7 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
   </g>`);
       y += boxH + gap;
     } else {
-      const x = lines.some((l) => l.overall) ? borderPad : 0;
+      const x = hasOverall ? borderPad : 0;
       bodyParts.push(
         `<g transform="translate(${x} ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, innerWidth)}</g>`,
       );
@@ -237,41 +256,109 @@ function renderClassicComposite(model: CompositeBadgeModel): string {
 </svg>`;
 }
 
-/** One classic shield — single engine, or bordered overall. */
+/** Inline — same shields in one horizontal row (distinct from classic stack). */
 function renderCompactComposite(model: CompositeBadgeModel): string {
-  const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
+  const lines = compositeLines(model);
+  const gap = 6;
+  const rowH = 20;
+  const borderPad = 3;
+  const parts = lines.map((line) => measureShield(line.label, line.status || "—"));
+  const hasOverall = lines.some((line) => line.overall);
 
-  if (model.engines.length >= 1 && !model.includeOverall) {
-    if (model.engines.length > 1) return renderClassicComposite(model);
-    const row = model.engines[0]!;
-    const status = metricParts(
-      row.verdict,
-      row.score,
-      row.citations,
-      show.filter((field) => field !== "age"),
-      model.checkedAt,
-      Boolean(row.comingSoon),
-    ).join(" · ");
-    return shieldBadge(shortEngine(row.id), status || readyWord(row.verdict), toneFrom(row.verdict));
-  }
+  let x = 0;
+  const bodyParts: string[] = [];
+  let maxH = rowH;
 
-  const status = metricParts(
-    model.overallVerdict,
-    model.overallScore,
-    model.overallCitations,
-    show,
-    model.checkedAt,
-    false,
-  ).join(" · ");
-  const measured = measureShield("ai search", status || readyWord(model.overallVerdict));
-  const pad = 3;
-  const width = measured.width + pad * 2;
-  const height = 20 + pad * 2;
+  lines.forEach((line, index) => {
+    const w = parts[index]!.width;
+    if (line.overall) {
+      const boxW = w + borderPad * 2;
+      const boxH = rowH + borderPad * 2;
+      maxH = Math.max(maxH, boxH);
+      bodyParts.push(`
+  <g transform="translate(${x} 0)">
+    <rect x="0.5" y="0.5" width="${boxW - 1}" height="${boxH - 1}" rx="10" fill="none" stroke="#161412" stroke-width="1.5"/>
+    <g transform="translate(${borderPad} ${borderPad})">${shieldBadgeInner(line.label, line.status || "—", line.tone, w)}</g>
+  </g>`);
+      x += boxW + gap;
+    } else {
+      const y = hasOverall ? borderPad : 0;
+      bodyParts.push(
+        `<g transform="translate(${x} ${y})">${shieldBadgeInner(line.label, line.status || "—", line.tone, w)}</g>`,
+      );
+      x += w + gap;
+      maxH = Math.max(maxH, y + rowH);
+    }
+  });
+
+  const width = Math.max(rowH, x - gap);
+  const aria = lines.map((line) => `${line.label}: ${line.status}`).join("; ");
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="ai search: ${escapeXml(status)}">
-  <title>ai search: ${escapeXml(status)}</title>
-  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="5" fill="none" stroke="#161412" stroke-width="1.5"/>
-  <g transform="translate(${pad} ${pad})">${shieldBadgeInner("ai search", status || readyWord(model.overallVerdict), toneFrom(model.overallVerdict), measured.width)}</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${maxH}" role="img" aria-label="${escapeXml(aria)}">
+  <title>${escapeXml(aria)}</title>
+  ${bodyParts.join("\n")}
+</svg>`;
+}
+
+/** Round pills — label + capsule metric chips in one bar. */
+function renderPillsComposite(model: CompositeBadgeModel): string {
+  const lines = compositeLines(model);
+  const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
+  const padX = 14;
+  const padY = 10;
+  const gap = 16;
+  const pillH = 22;
+  const height = padY * 2 + Math.max(28, pillH + 6);
+
+  type Cell = { label: string; pill: string; tone: Tone; overall: boolean; labelW: number; pillW: number };
+  const cells: Cell[] = lines.map((line) => {
+    const pill =
+      show.includes("score") && !show.includes("ready") && !show.includes("age") && !show.includes("cited")
+        ? `${line.score ?? 0}/100`
+        : line.status || "—";
+    const labelW = Math.round(Math.max(36, line.label.length * 7.4));
+    const pillW = Math.round(Math.max(44, pill.length * 6.6 + 18));
+    return {
+      label: line.label,
+      pill,
+      tone: line.tone,
+      overall: Boolean(line.overall),
+      labelW,
+      pillW,
+    };
+  });
+
+  const cellWidths = cells.map((cell) => cell.labelW + 8 + cell.pillW);
+  const inner = cellWidths.reduce((a, b) => a + b, 0) + gap * Math.max(0, cells.length - 1);
+  const width = padX * 2 + inner;
+  const rx = height / 2;
+
+  let cursor = padX;
+  const parts: string[] = [];
+  cells.forEach((cell, index) => {
+    const cy = height / 2;
+    const labelX = cursor;
+    const pillX = cursor + cell.labelW + 8;
+    const pillY = (height - pillH) / 2;
+    const fill = pillFill(cell.tone);
+    const stroke = cell.overall ? `stroke="#161412" stroke-width="1.25"` : "";
+    parts.push(`
+  <text x="${labelX}" y="${cy + 4}" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#18181b">${escapeXml(cell.label)}</text>
+  <rect x="${pillX}" y="${pillY}" width="${cell.pillW}" height="${pillH}" rx="${pillH / 2}" fill="${fill.bg}" ${stroke}/>
+  <text x="${pillX + cell.pillW / 2}" y="${cy + 4}" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="${fill.fg}">${escapeXml(cell.pill)}</text>`);
+    cursor += cellWidths[index]! + gap;
+    if (index < cells.length - 1) {
+      const divX = cursor - gap / 2;
+      parts.push(`<line x1="${divX}" y1="${padY}" x2="${divX}" y2="${height - padY}" stroke="#e7e5e4"/>`);
+    }
+  });
+
+  const aria = lines.map((line) => `${line.label}: ${line.status}`).join("; ");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(aria)}">
+  <title>${escapeXml(aria)}</title>
+  <rect width="${width}" height="${height}" rx="${rx}" fill="#ffffff" stroke="#e7e5e4"/>
+  ${parts.join("\n")}
 </svg>`;
 }
 
@@ -305,7 +392,7 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
           row.verdict,
           row.score,
           row.citations,
-          show.filter((field) => field !== "age"),
+          show,
           model.checkedAt,
           Boolean(row.comingSoon),
         ).join(" · ").length *
@@ -323,7 +410,7 @@ function renderMonoComposite(model: CompositeBadgeModel): string {
         row.verdict,
         row.score,
         row.citations,
-        show.filter((field) => field !== "age"),
+        show,
         model.checkedAt,
         Boolean(row.comingSoon),
       ).join(" · ");
@@ -510,11 +597,14 @@ function resolveBadgeCopy(
 }
 
 function shortEngine(engine: Platform): string {
-  if (engine === "chatgpt") return "openai";
-  if (engine === "claude") return "anthropic";
-  if (engine === "perplexity") return "pplx";
-  if (engine === "gemini") return "gemini";
-  return engine;
+  return PLATFORM_LABELS[engine];
+}
+
+function pillFill(tone: Tone): { bg: string; fg: string } {
+  if (tone === "blocked") return { bg: "#dc2626", fg: "#ffffff" };
+  if (tone === "unclear") return { bg: "#d97706", fg: "#ffffff" };
+  if (tone === "pending") return { bg: "#a8a29e", fg: "#ffffff" };
+  return { bg: "#16a34a", fg: "#ffffff" };
 }
 
 type Tone = "ready" | "blocked" | "unclear" | "pending";
