@@ -196,13 +196,29 @@ export default function Home() {
         <p className="mt-2 text-sm leading-6 text-muted">
           Search bots only: OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot,
           Claude-User. Training crawlers like GPTBot and ClaudeBot are listed on the report
-          but do not fail the badge.{" "}
+          but do not fail the badge. Reports also note{" "}
+          <code className="font-mono">robots.txt</code>,{" "}
+          <code className="font-mono">llms.txt</code>,{" "}
+          <code className="font-mono">llms-full.txt</code>, and{" "}
+          <code className="font-mono">sitemap.xml</code>.{" "}
           <Link href="/guides/gptbot-vs-chatgpt-user" className="text-foreground underline underline-offset-4">
             Why that split matters
           </Link>
           . This site publishes{" "}
           <a href="/llms.txt" className="text-foreground underline underline-offset-4">
-            its own llms.txt
+            llms.txt
+          </a>
+          ,{" "}
+          <a href="/llms-full.txt" className="text-foreground underline underline-offset-4">
+            llms-full.txt
+          </a>
+          ,{" "}
+          <a href="/robots.txt" className="text-foreground underline underline-offset-4">
+            robots.txt
+          </a>
+          , and a{" "}
+          <a href="/sitemap.xml" className="text-foreground underline underline-offset-4">
+            sitemap
           </a>
           .
         </p>

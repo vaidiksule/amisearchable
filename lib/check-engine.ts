@@ -13,10 +13,14 @@ export async function runLiveCheck(domain: string): Promise<CheckResult> {
   const httpsOrigin = `https://${domain}`;
   const robotsUrl = `${httpsOrigin}/robots.txt`;
   const llmsUrl = `${httpsOrigin}/llms.txt`;
+  const llmsFullUrl = `${httpsOrigin}/llms-full.txt`;
+  const sitemapUrl = `${httpsOrigin}/sitemap.xml`;
 
-  const [robotsResult, llmsResult] = await Promise.all([
+  const [robotsResult, llmsResult, llmsFullResult, sitemapResult] = await Promise.all([
     safeFetchText(robotsUrl),
     safeFetchText(llmsUrl),
+    safeFetchText(llmsFullUrl),
+    safeFetchText(sitemapUrl),
   ]);
 
   const crawlers = emptyCrawlers();
@@ -40,6 +44,8 @@ export async function runLiveCheck(domain: string): Promise<CheckResult> {
   }
 
   const llmsTxtPresent = isLlmsTxt(llmsResult.ok ? llmsResult.text : "");
+  const llmsFullTxtPresent = isLlmsTxt(llmsFullResult.ok ? llmsFullResult.text : "");
+  const sitemapXmlPresent = isSitemapXml(sitemapResult.ok ? sitemapResult.text : "");
 
   return {
     domain,
@@ -47,8 +53,12 @@ export async function runLiveCheck(domain: string): Promise<CheckResult> {
     crawlers,
     llmsTxtPresent,
     llmsTxtUrl: llmsTxtPresent ? llmsUrl : null,
+    llmsFullTxtPresent,
+    llmsFullTxtUrl: llmsFullTxtPresent ? llmsFullUrl : null,
     robotsTxtFound,
     robotsTxtUrl: robotsTxtFound ? robotsUrl : null,
+    sitemapXmlPresent,
+    sitemapXmlUrl: sitemapXmlPresent ? sitemapUrl : null,
     checkedAt: new Date().toISOString(),
     error: robotsError,
   };
@@ -73,4 +83,12 @@ function isLlmsTxt(body: string): boolean {
     return false;
   }
   return true;
+}
+
+function isSitemapXml(body: string): boolean {
+  const trimmed = body.trim();
+  if (trimmed.length < 20) return false;
+  const head = trimmed.slice(0, 200).toLowerCase();
+  if (head.startsWith("<!doctype") || head.includes("<html")) return false;
+  return head.includes("<urlset") || head.includes("<sitemapindex") || head.includes("<url>");
 }

@@ -39,8 +39,12 @@ export type CheckResult = {
   crawlers: Record<CrawlerName, CrawlerStatus>;
   llmsTxtPresent: boolean;
   llmsTxtUrl: string | null;
+  llmsFullTxtPresent: boolean;
+  llmsFullTxtUrl: string | null;
   robotsTxtFound: boolean;
   robotsTxtUrl: string | null;
+  sitemapXmlPresent: boolean;
+  sitemapXmlUrl: string | null;
   checkedAt: string;
   error: string | null;
 };

@@ -19,8 +19,17 @@ export function SiteFooter() {
             <Link href="/guides" className="hover:text-foreground">
               Guides
             </Link>
+            <a href="/robots.txt" className="hover:text-foreground">
+              robots.txt
+            </a>
+            <a href="/sitemap.xml" className="hover:text-foreground">
+              sitemap
+            </a>
             <a href="/llms.txt" className="hover:text-foreground">
               llms.txt
+            </a>
+            <a href="/llms-full.txt" className="hover:text-foreground">
+              llms-full
             </a>
             <Link href="/pricing" className="hover:text-foreground">
               Pricing

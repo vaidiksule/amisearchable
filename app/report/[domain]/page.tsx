@@ -88,6 +88,29 @@ function BotTable({
   );
 }
 
+function FileRow({
+  label,
+  found,
+  href,
+}: {
+  label: string;
+  found: boolean;
+  href: string | null;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3">
+      <span className="font-mono text-muted">{label}</span>
+      {found && href ? (
+        <a href={href} className="text-accent underline underline-offset-4" target="_blank" rel="noreferrer">
+          found
+        </a>
+      ) : (
+        <span className="text-muted">not found</span>
+      )}
+    </li>
+  );
+}
+
 export default async function ReportPage(props: PageProps<"/report/[domain]">) {
   const raw = decodeURIComponent((await props.params).domain);
   const domain = normalizeDomain(raw);
@@ -174,15 +197,31 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
         </div>
       </section>
 
-      <p className="mt-8 text-sm">
-        {result.llmsTxtPresent && result.llmsTxtUrl ? (
-          <a href={result.llmsTxtUrl} className="text-accent underline" target="_blank" rel="noreferrer">
-            llms.txt found
-          </a>
-        ) : (
-          <span className="text-muted">llms.txt not found</span>
-        )}
-      </p>
+      <section className="mt-8">
+        <h2 className="text-sm font-medium">Files</h2>
+        <ul className="mt-3 space-y-2 text-sm">
+          <FileRow
+            label="robots.txt"
+            found={result.robotsTxtFound}
+            href={result.robotsTxtUrl}
+          />
+          <FileRow
+            label="llms.txt"
+            found={result.llmsTxtPresent}
+            href={result.llmsTxtUrl}
+          />
+          <FileRow
+            label="llms-full.txt"
+            found={Boolean(result.llmsFullTxtPresent)}
+            href={result.llmsFullTxtUrl ?? null}
+          />
+          <FileRow
+            label="sitemap.xml"
+            found={Boolean(result.sitemapXmlPresent)}
+            href={result.sitemapXmlUrl ?? null}
+          />
+        </ul>
+      </section>
 
       {result.error ? <p className="mt-4 text-sm text-warn">{result.error}</p> : null}
 

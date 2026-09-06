@@ -12,6 +12,7 @@ This site is open to AI search and training crawlers, including GPTBot, ChatGPT-
 - [Privacy Policy](https://amisearchable.cc/privacy)
 - [Terms of Service](https://amisearchable.cc/terms)
 - [Our robots.txt](https://amisearchable.cc/robots.txt)
+- [Sitemap](https://amisearchable.cc/sitemap.xml)
 - [This file](https://amisearchable.cc/llms.txt)
 - [Full description](https://amisearchable.cc/llms-full.txt)
 

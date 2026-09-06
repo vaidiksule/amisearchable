@@ -28,7 +28,22 @@ export async function getLatestCheck(domain: string): Promise<CheckResult | null
     .limit(1)
     .maybeSingle();
 
-  return (check?.results as CheckResult | undefined) ?? null;
+  const raw = check?.results as CheckResult | undefined;
+  return raw ? normalizeCheckResult(raw) : null;
+}
+
+/** Older cached checks may omit newer file fields. */
+export function normalizeCheckResult(result: CheckResult): CheckResult {
+  const origin = `https://${result.domain}`;
+  return {
+    ...result,
+    llmsFullTxtPresent: result.llmsFullTxtPresent ?? false,
+    llmsFullTxtUrl: result.llmsFullTxtUrl ?? null,
+    sitemapXmlPresent: result.sitemapXmlPresent ?? false,
+    sitemapXmlUrl: result.sitemapXmlUrl ?? null,
+    robotsTxtUrl: result.robotsTxtUrl ?? (result.robotsTxtFound ? `${origin}/robots.txt` : null),
+    llmsTxtUrl: result.llmsTxtUrl ?? (result.llmsTxtPresent ? `${origin}/llms.txt` : null),
+  };
 }
 
 export async function saveCheck(result: CheckResult): Promise<void> {

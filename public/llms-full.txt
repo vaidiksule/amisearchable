@@ -1,6 +1,6 @@
 # amisearchable.cc
 
-amisearchable.cc is a free AI crawler checker and embeddable badge. Paste any public domain. The tool fetches that domain's robots.txt and llms.txt, then reports whether AI search and training crawlers are allowed, blocked, or unspecified.
+amisearchable.cc is a free AI crawler checker and embeddable badge. Paste any public domain. The tool fetches that domain's robots.txt, llms.txt, llms-full.txt, and sitemap.xml, then reports whether AI search and training crawlers are allowed, blocked, or unspecified.
 
 ## What the checker measures
 
@@ -19,11 +19,16 @@ The badge passes when none of those bots are blocked. Training crawlers are list
 - Google-Extended
 - CCBot
 
-llms.txt presence is informational. A missing llms.txt is not a fail.
+File presence is informational and does not fail the badge:
 
-This confirms crawler permission. It does not guarantee the site will be cited in ChatGPT, Claude, Perplexity, or other AI answers. Citation also depends on content quality, competing sources, and each engine's ranking.
+- robots.txt — access rules for crawlers (also drives the pass/fail verdict)
+- llms.txt — short site description for language models
+- llms-full.txt — longer optional description
+- sitemap.xml — URL map for crawlers that use it
 
-The tool only reads public robots.txt and llms.txt. Anyone can check any public domain.
+This confirms crawler permission and whether those files exist. It does not guarantee the site will be cited in ChatGPT, Claude, Perplexity, or other AI answers. Citation also depends on content quality, competing sources, and each engine's ranking.
+
+Anyone can check any public domain.
 
 ## Product
 
@@ -34,7 +39,12 @@ The tool only reads public robots.txt and llms.txt. Anyone can check any public 
 
 ## This site
 
-amisearchable.cc allows AI search and training crawlers. See https://amisearchable.cc/robots.txt and https://amisearchable.cc/llms.txt.
+amisearchable.cc allows AI search and training crawlers.
+
+- https://amisearchable.cc/robots.txt
+- https://amisearchable.cc/sitemap.xml
+- https://amisearchable.cc/llms.txt
+- https://amisearchable.cc/llms-full.txt
 
 ## Guides
 
