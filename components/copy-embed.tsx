@@ -139,96 +139,90 @@ export function CopyEmbed({
     <section className="space-y-3">
       <h2 className="text-sm font-medium">Embed</h2>
 
-      {/* Two towers — narrow filters, wide preview */}
-      <div className="grid gap-3 lg:grid-cols-[11.5rem_minmax(0,1fr)]">
-        {/* Left: filters */}
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <div className="space-y-5">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                1 · Engines
-              </p>
-              <ul className="mt-2">
-                {PLATFORMS_UI_ORDER.map((platform) => {
-                  const soon = isCitationComingSoon(platform);
-                  const checked = engines.includes(platform);
-                  return (
-                    <li key={platform}>
-                      <label
-                        className={`flex items-center justify-between gap-2 py-2 text-sm ${
-                          soon ? "cursor-not-allowed opacity-55" : "cursor-pointer"
-                        }`}
-                      >
-                        <span className={`flex items-center gap-2 ${soon ? "text-muted" : "text-foreground"}`}>
-                          <IconifyImg id={platformIconify(platform)} />
-                          {PLATFORM_LABELS[platform]}
-                          {soon ? " · soon" : null}
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={soon}
-                          onChange={() => {
-                            if (!soon) toggleEngine(platform);
-                          }}
-                          className="h-3.5 w-3.5 accent-foreground disabled:cursor-not-allowed"
-                        />
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                2 · Show
-              </p>
-              <ul className="mt-2">
-                <li>
-                  <label
-                    className={`flex items-center justify-between gap-2 py-2 text-sm ${
-                      engines.length === 0
-                        ? "cursor-not-allowed opacity-55"
-                        : "cursor-pointer"
-                    }`}
-                  >
-                    <span title="Site-wide crawl score (bordered capsule)" className="flex items-center gap-2">
-                      <IconifyImg id={metricIconify("overall")} />
-                      Overall summary
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={engines.length === 0 || includeOverall}
-                      disabled={engines.length === 0}
-                      onChange={() => setIncludeOverall((value) => !value)}
-                      className="h-3.5 w-3.5 accent-foreground disabled:cursor-not-allowed"
-                    />
-                  </label>
-                </li>
-                {BADGE_SHOW_FIELDS.map((field) => (
-                  <li key={field}>
-                    <label className="flex cursor-pointer items-center justify-between gap-2 py-2 text-sm">
-                      <span className="flex items-center gap-2">
-                        <IconifyImg id={metricIconify(field)} />
-                        {BADGE_SHOW_LABELS[field]}
-                      </span>
+      <div className="rounded-lg border border-border bg-surface p-5">
+        {/* Top: engines left · show right */}
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              1 · Engines
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+              {PLATFORMS_UI_ORDER.map((platform) => {
+                const soon = isCitationComingSoon(platform);
+                const checked = engines.includes(platform);
+                return (
+                  <li key={platform}>
+                    <label
+                      className={`inline-flex items-center gap-2 text-sm ${
+                        soon ? "cursor-not-allowed opacity-55" : "cursor-pointer"
+                      }`}
+                    >
                       <input
                         type="checkbox"
-                        checked={show.includes(field)}
-                        onChange={() => toggleShow(field)}
-                        className="h-3.5 w-3.5 accent-foreground"
+                        checked={checked}
+                        disabled={soon}
+                        onChange={() => {
+                          if (!soon) toggleEngine(platform);
+                        }}
+                        className="h-3.5 w-3.5 accent-foreground disabled:cursor-not-allowed"
                       />
+                      <IconifyImg id={platformIconify(platform)} />
+                      <span className={soon ? "text-muted" : "text-foreground"}>
+                        {PLATFORM_LABELS[platform]}
+                        {soon ? " · soon" : null}
+                      </span>
                     </label>
                   </li>
-                ))}
-              </ul>
-            </div>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              2 · Show
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+              <li>
+                <label
+                  className={`inline-flex items-center gap-2 text-sm ${
+                    engines.length === 0
+                      ? "cursor-not-allowed opacity-55"
+                      : "cursor-pointer"
+                  }`}
+                  title="Site-wide crawl score"
+                >
+                  <input
+                    type="checkbox"
+                    checked={engines.length === 0 || includeOverall}
+                    disabled={engines.length === 0}
+                    onChange={() => setIncludeOverall((value) => !value)}
+                    className="h-3.5 w-3.5 accent-foreground disabled:cursor-not-allowed"
+                  />
+                  <IconifyImg id={metricIconify("overall")} />
+                  <span>Overall</span>
+                </label>
+              </li>
+              {BADGE_SHOW_FIELDS.map((field) => (
+                <li key={field}>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={show.includes(field)}
+                      onChange={() => toggleShow(field)}
+                      className="h-3.5 w-3.5 accent-foreground"
+                    />
+                    <IconifyImg id={metricIconify(field)} />
+                    <span>{BADGE_SHOW_LABELS[field]}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* Right: live preview + style at X */}
-        <div className="rounded-lg border border-border bg-surface p-5">
+        {/* Bottom: live preview */}
+        <div className="mt-6 border-t border-border pt-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">
               Live preview
@@ -249,9 +243,15 @@ export function CopyEmbed({
             </label>
           </div>
 
-          <div className="mt-4 flex min-h-28 items-center justify-center rounded-md border border-border bg-background p-6">
+          <div className="mt-4 flex min-h-40 items-center justify-center overflow-x-auto rounded-md border border-border bg-background p-6 sm:min-h-48 sm:p-8">
+            {/* Scale up for readability; max-width counters scale so wide inline rows fit. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewSrc} alt={previewAlt} className="h-auto max-w-full" />
+            <img
+              src={previewSrc}
+              alt={previewAlt}
+              className="h-auto w-auto origin-center scale-[var(--preview-scale)] [--preview-scale:1.35] sm:[--preview-scale:1.5]"
+              style={{ maxWidth: "calc(100% / var(--preview-scale))" }}
+            />
           </div>
 
           <p className="mt-3 text-xs text-muted">

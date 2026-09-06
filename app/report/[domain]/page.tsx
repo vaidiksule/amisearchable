@@ -365,14 +365,16 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
         />
       </div>
 
-      <div className="mt-8">
-        <Link
-          href={`/monitor?domain=${domain}`}
-          className="inline-flex h-10 items-center rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
-        >
-          Keep monitored · $5/mo
-        </Link>
-      </div>
+      {profile?.plan !== "pro" ? (
+        <div className="mt-8">
+          <Link
+            href={`/monitor?domain=${domain}`}
+            className="inline-flex h-10 items-center rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
+          >
+            Keep monitored · $5/mo
+          </Link>
+        </div>
+      ) : null}
     </PageFrame>
   );
 }
