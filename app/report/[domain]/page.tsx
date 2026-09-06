@@ -63,6 +63,31 @@ function StatusTone({ status }: { status: CrawlerStatus }) {
   return <span className={color}>{statusLabel(status)}</span>;
 }
 
+function BotTable({
+  bots,
+  crawlers,
+}: {
+  bots: readonly string[];
+  crawlers: Record<string, CrawlerStatus>;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <table className="w-full text-left text-sm">
+        <tbody>
+          {bots.map((crawler) => (
+            <tr key={crawler} className="border-t border-border first:border-t-0">
+              <td className="px-4 py-3 font-mono">{crawler}</td>
+              <td className="px-4 py-3 text-right">
+                <StatusTone status={crawlers[crawler]} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default async function ReportPage(props: PageProps<"/report/[domain]">) {
   const raw = decodeURIComponent((await props.params).domain);
   const domain = normalizeDomain(raw);
@@ -112,13 +137,11 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
           },
         ]}
       />
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{domain}</h1>
-          <p className="mt-2 text-sm text-muted">
-            AI crawler access report · {formatCheckedAt(result.checkedAt)}
-            {result.rateLimited ? " · wait a minute to refresh" : ""}
-          </p>
+          <p className="mt-2 text-sm text-muted">{formatCheckedAt(result.checkedAt)}</p>
         </div>
         <Link href={`/report/${domain}?fresh=1`} className="text-sm underline underline-offset-4">
           Re-check
@@ -135,67 +158,31 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
           alt={badgeLabel(result.verdict, result.checkedAt)}
           className="mt-4 h-6"
         />
-        <p className="mt-4 text-sm text-muted">
-          Search and fetch bots only. Blocking training crawlers does not fail this badge.
-        </p>
       </div>
 
       <section className="mt-8">
         <h2 className="text-sm font-medium">AI search bots</h2>
-        <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface">
-          <table className="w-full text-left text-sm">
-            <tbody>
-              {SEARCH_BOTS.map((crawler) => (
-                <tr key={crawler} className="border-t border-border first:border-t-0">
-                  <td className="px-4 py-3 font-mono">{crawler}</td>
-                  <td className="px-4 py-3">
-                    <StatusTone status={result.crawlers[crawler]} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-3">
+          <BotTable bots={SEARCH_BOTS} crawlers={result.crawlers} />
         </div>
       </section>
 
       <section className="mt-8">
         <h2 className="text-sm font-medium">Training crawlers</h2>
-        <p className="mt-1 text-xs text-muted">Informational. Blocking these is fine.</p>
-        <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface">
-          <table className="w-full text-left text-sm">
-            <tbody>
-              {TRAINING_BOTS.map((crawler) => (
-                <tr key={crawler} className="border-t border-border first:border-t-0">
-                  <td className="px-4 py-3 font-mono">{crawler}</td>
-                  <td className="px-4 py-3">
-                    <StatusTone status={result.crawlers[crawler]} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-3">
+          <BotTable bots={TRAINING_BOTS} crawlers={result.crawlers} />
         </div>
       </section>
 
-      <p className="mt-8 text-sm leading-6 text-muted">
-        This confirms whether AI crawlers can access your site — it doesn&apos;t guarantee your
-        content is cited in AI-generated answers, which also depends on content quality, competing
-        sources, and each engine&apos;s own ranking.
-      </p>
-
-      <div className="mt-8 text-sm">
-        <span className="font-medium">llms.txt</span>
+      <p className="mt-8 text-sm">
         {result.llmsTxtPresent && result.llmsTxtUrl ? (
-          <>
-            {" "}
-            <a href={result.llmsTxtUrl} className="text-accent underline" target="_blank" rel="noreferrer">
-              found
-            </a>
-          </>
+          <a href={result.llmsTxtUrl} className="text-accent underline" target="_blank" rel="noreferrer">
+            llms.txt found
+          </a>
         ) : (
-          <span className="text-muted"> — not found</span>
+          <span className="text-muted">llms.txt not found</span>
         )}
-      </div>
+      </p>
 
       {result.error ? <p className="mt-4 text-sm text-warn">{result.error}</p> : null}
 
@@ -203,20 +190,14 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
         <CopyEmbed domain={domain} verdict={result.verdict} checkedAt={result.checkedAt} />
       </div>
 
-      <div className="mt-8 rounded-lg border border-border bg-surface p-5">
-        <p className="text-sm">Keep this badge accurate.</p>
-        <p className="mt-1 text-sm text-muted">Pro re-checks daily and emails you if it changes. $5/mo.</p>
+      <div className="mt-8">
         <Link
           href={`/monitor?domain=${domain}`}
-          className="mt-4 inline-flex h-10 items-center rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
+          className="inline-flex h-10 items-center rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
         >
-          Keep this monitored
+          Keep monitored · $5/mo
         </Link>
       </div>
-
-      <p className="mt-8 text-xs text-muted">
-        Reads public robots.txt and llms.txt only. Anyone can check any public domain.
-      </p>
     </PageFrame>
   );
 }
