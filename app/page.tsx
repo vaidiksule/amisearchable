@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { DomainForm } from "@/components/domain-form";
 import { JsonLd } from "@/components/json-ld";
@@ -84,9 +85,71 @@ export default function Home() {
       </section>
 
       <section className="border-t border-border py-10 sm:py-14">
-        <h2 className="text-sm font-medium">The badge</h2>
+        <h2 className="text-sm font-medium">You might be invisible to AI search right now</h2>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+          robots.txt gets overwritten more often than you&apos;d think — a new theme, a new
+          host, a &quot;cleanup&quot; from an agency. Most people find out they&apos;re blocked by
+          accident, months later. Check now, know for sure.
+        </p>
+      </section>
+
+      <section className="border-t border-border py-10 sm:py-14">
+        <h2 className="text-sm font-medium">See it in a real README</h2>
         <p className="mt-2 text-sm text-muted">
-          Drop it in a README or footer. It shows whether search bots can cite you.
+          Not a mockup. This is a real badge, in a real README.
+        </p>
+        <figure className="mt-6 overflow-hidden rounded-lg border border-border bg-[#0d1117]">
+          <Image
+            src="/proof/github-readme-badge.png"
+            alt="GitHub README showing a live AI Searchable badge: ai search ready"
+            width={996}
+            height={608}
+            className="h-auto w-full"
+            priority={false}
+          />
+          <figcaption className="border-t border-border px-4 py-3 text-xs text-muted">
+            From{" "}
+            <a
+              href="https://github.com/vaidiksule/roast-the-page"
+              className="text-foreground underline underline-offset-4"
+              target="_blank"
+              rel="noreferrer"
+            >
+              github.com/vaidiksule/roast-the-page
+            </a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section className="border-t border-border py-10 sm:py-14">
+        <h2 className="text-sm font-medium">Live examples</h2>
+        <p className="mt-2 text-sm text-muted">Real domains. Real robots.txt. Live badges.</p>
+        <div className="mt-4 space-y-3">
+          {EXAMPLES.map((example) => (
+            <Link
+              key={example.domain}
+              href={`/report/${example.domain}`}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-mono text-sm">{example.domain}</p>
+                <p className="mt-1 text-xs text-muted">{example.note}</p>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/badge/${example.domain}`}
+                alt={embedAlt(example.domain)}
+                className="h-5 w-auto max-w-full self-start sm:self-center"
+              />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border py-10 sm:py-14">
+        <h2 className="text-sm font-medium">Badge styles</h2>
+        <p className="mt-2 text-sm text-muted">
+          Same status URL. Pick a look for your README or footer.
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -125,39 +188,6 @@ export default function Home() {
               <StaticBadge verdict="pass" style="outline" className="h-7" />
             </div>
           </div>
-        </div>
-
-        <div className="mt-3 rounded-lg border border-border bg-surface p-5">
-          <p className="font-mono text-xs text-muted">README.md</p>
-          <p className="mt-3 text-sm font-medium">your-project</p>
-          <p className="mt-1 text-sm text-muted">What it looks like on GitHub.</p>
-          <div className="mt-3 overflow-x-auto">
-            <StaticBadge verdict="pass" className="h-5" />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-border py-10 sm:py-14">
-        <h2 className="text-sm font-medium">Live examples</h2>
-        <div className="mt-4 space-y-3">
-          {EXAMPLES.map((example) => (
-            <Link
-              key={example.domain}
-              href={`/report/${example.domain}`}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-4 py-3 hover:border-stone-400 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-mono text-sm">{example.domain}</p>
-                <p className="mt-1 text-xs text-muted">{example.note}</p>
-              </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/badge/${example.domain}`}
-                alt={embedAlt(example.domain)}
-                className="h-5 w-auto max-w-full self-start sm:self-center"
-              />
-            </Link>
-          ))}
         </div>
       </section>
 
