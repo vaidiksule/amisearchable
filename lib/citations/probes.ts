@@ -15,6 +15,7 @@ export function configuredCitationEngines(): Platform[] {
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim()) {
     engines.push("gemini");
   }
+  if (process.env.XAI_API_KEY?.trim()) engines.push("grok");
   return engines;
 }
 
@@ -72,6 +73,7 @@ const runners: Partial<Record<Platform, ProbeFn>> = {
   claude: probeClaude,
   perplexity: probePerplexity,
   gemini: probeGemini,
+  grok: probeGrok,
 };
 
 async function probePerplexity(_domain: string, query: string): Promise<string[]> {
@@ -120,6 +122,7 @@ async function probeChatgpt(_domain: string, query: string): Promise<string[]> {
     body: JSON.stringify({
       model: "gpt-4.1-mini",
       tools: [{ type: "web_search_preview" }],
+      include: ["web_search_call.action.sources"],
       input: query,
     }),
   });
@@ -165,7 +168,7 @@ async function probeGemini(_domain: string, query: string): Promise<string[]> {
     process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new Error("GEMINI_API_KEY missing");
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -177,6 +180,31 @@ async function probeGemini(_domain: string, query: string): Promise<string[]> {
 
   if (!res.ok) {
     throw new Error(`Gemini ${res.status}`);
+  }
+
+  const data = (await res.json()) as unknown;
+  return extractUrlsDeep(data);
+}
+
+async function probeGrok(_domain: string, query: string): Promise<string[]> {
+  const key = process.env.XAI_API_KEY?.trim();
+  if (!key) throw new Error("XAI_API_KEY missing");
+
+  const res = await fetch("https://api.x.ai/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "grok-4-fast",
+      tools: [{ type: "web_search" }],
+      input: query,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Grok ${res.status}`);
   }
 
   const data = (await res.json()) as unknown;

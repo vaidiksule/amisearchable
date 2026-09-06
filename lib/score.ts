@@ -1,5 +1,6 @@
 import type { CheckResult, CrawlerName, CrawlerStatus } from "@/lib/crawlers";
 import {
+  botsForPlatform,
   PLATFORM_SEARCH_BOTS,
   PLATFORMS,
   type Platform,
@@ -27,7 +28,10 @@ const WEIGHTS = {
 
 export function scoreFromCheck(result: CheckResult): ScoreBreakdown {
   const robots = result.robotsTxtFound ? WEIGHTS.robots : 0;
-  const searchBots = searchBotPoints(result.crawlers, Object.values(PLATFORM_SEARCH_BOTS).flat());
+  const searchBots = searchBotPoints(
+    result.crawlers,
+    [...new Set(Object.values(PLATFORM_SEARCH_BOTS).flat())],
+  );
   const sitemap = result.sitemapXmlPresent ? WEIGHTS.sitemap : 0;
   const llmsTxt = result.llmsTxtPresent ? WEIGHTS.llmsTxt : 0;
   const llmsFull = result.llmsFullTxtPresent ? WEIGHTS.llmsFull : 0;
@@ -56,17 +60,12 @@ export function scoreFromCheck(result: CheckResult): ScoreBreakdown {
 
 function platformScore(result: CheckResult, platform: Platform): number {
   const robots = result.robotsTxtFound ? WEIGHTS.robots : 0;
-  const searchBots = searchBotPoints(result.crawlers, PLATFORM_SEARCH_BOTS[platform]);
-  // Scale search-bot points to the same 40 max even when fewer bots.
-  const scaledSearch =
-    PLATFORM_SEARCH_BOTS[platform].length > 0
-      ? (searchBots / WEIGHTS.searchBots) * WEIGHTS.searchBots
-      : 0;
+  const searchBots = searchBotPoints(result.crawlers, botsForPlatform(platform));
   const sitemap = result.sitemapXmlPresent ? WEIGHTS.sitemap : 0;
   const llmsTxt = result.llmsTxtPresent ? WEIGHTS.llmsTxt : 0;
   const llmsFull = result.llmsFullTxtPresent ? WEIGHTS.llmsFull : 0;
 
-  let total = robots + scaledSearch + sitemap + llmsTxt + llmsFull;
+  let total = robots + searchBots + sitemap + llmsTxt + llmsFull;
   if (!result.robotsTxtFound) total = Math.min(total, 35);
   return clamp(Math.round(total));
 }
@@ -80,7 +79,6 @@ function searchBotPoints(
   let allowed = 0;
   for (const bot of unique) {
     if (crawlers[bot] === "blocked") continue;
-    // allowed or unspecified both count as crawlable under default-allow
     allowed += 1;
   }
   return (allowed / unique.length) * WEIGHTS.searchBots;

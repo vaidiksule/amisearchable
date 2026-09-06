@@ -1,7 +1,13 @@
-import type { CheckResult, CrawlerName, CrawlerStatus, Verdict } from "@/lib/crawlers";
+import {
+  SEARCH_BOTS,
+  type CheckResult,
+  type CrawlerName,
+  type CrawlerStatus,
+  type Verdict,
+} from "@/lib/crawlers";
 import { verdictFromCheck } from "@/lib/crawlers";
 
-export const PLATFORMS = ["chatgpt", "claude", "perplexity", "gemini"] as const;
+export const PLATFORMS = ["chatgpt", "claude", "perplexity", "gemini", "grok"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 export const PLATFORM_LABELS: Record<Platform, string> = {
@@ -9,14 +15,19 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
   claude: "Claude",
   perplexity: "Perplexity",
   gemini: "Gemini",
+  grok: "Grok",
 };
 
-/** Search/fetch bots that gate “ready” for each AI product. */
+/**
+ * Search/fetch bots that gate “ready” for each AI product.
+ * Grok has no dedicated robots token yet — we fall back to overall search-bot access.
+ */
 export const PLATFORM_SEARCH_BOTS: Record<Platform, readonly CrawlerName[]> = {
   chatgpt: ["OAI-SearchBot", "ChatGPT-User"],
   claude: ["Claude-SearchBot", "Claude-User"],
   perplexity: ["PerplexityBot"],
   gemini: ["Google-Extended"],
+  grok: [],
 };
 
 export function parsePlatform(value: string | null | undefined): Platform | "all" {
@@ -33,8 +44,13 @@ export function platformVerdict(
   },
 ): Verdict {
   if (!input.robotsTxtFound) return "unclear";
-  const bots = PLATFORM_SEARCH_BOTS[platform];
+  const bots = botsForPlatform(platform);
   return bots.some((bot) => input.crawlers[bot] === "blocked") ? "fail" : "pass";
+}
+
+export function botsForPlatform(platform: Platform): readonly CrawlerName[] {
+  const bots = PLATFORM_SEARCH_BOTS[platform];
+  return bots.length > 0 ? bots : SEARCH_BOTS;
 }
 
 export function overallVerdict(result: Pick<CheckResult, "robotsTxtFound" | "crawlers">): Verdict {

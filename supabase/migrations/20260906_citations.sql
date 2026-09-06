@@ -3,7 +3,7 @@
 create table if not exists public.citations (
   id uuid primary key default gen_random_uuid(),
   domain_id uuid not null references public.domains (id) on delete cascade,
-  engine text not null check (engine in ('chatgpt', 'claude', 'perplexity', 'gemini')),
+  engine text not null check (engine in ('chatgpt', 'claude', 'perplexity', 'gemini', 'grok')),
   probes int not null default 0,
   hits int not null default 0,
   probed_at timestamptz not null default now(),

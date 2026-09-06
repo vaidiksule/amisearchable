@@ -26,6 +26,7 @@ export function emptyCitationSnapshot(domain: string): CitationSnapshot {
       claude: null,
       perplexity: null,
       gemini: null,
+      grok: null,
     },
   };
 }

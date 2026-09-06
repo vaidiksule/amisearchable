@@ -146,6 +146,7 @@ function resolveBadgeCopy(
 function shortEngine(engine: Platform): string {
   if (engine === "chatgpt") return "gpt";
   if (engine === "perplexity") return "pplx";
+  if (engine === "gemini") return "gem";
   return engine;
 }
 
