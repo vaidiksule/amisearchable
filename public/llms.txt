@@ -9,6 +9,8 @@ This site is open to AI search and training crawlers, including GPTBot, ChatGPT-
 - [Check a domain](https://amisearchable.cc/): AI crawler access checker for robots.txt and llms.txt
 - [Pricing](https://amisearchable.cc/pricing): Free badge, Pro monitoring for status changes
 - [Guides](https://amisearchable.cc/guides): GEO, AEO, and AI search visibility explainers
+- [Privacy Policy](https://amisearchable.cc/privacy)
+- [Terms of Service](https://amisearchable.cc/terms)
 - [Our robots.txt](https://amisearchable.cc/robots.txt)
 - [This file](https://amisearchable.cc/llms.txt)
 - [Full description](https://amisearchable.cc/llms-full.txt)

@@ -45,3 +45,5 @@ amisearchable.cc allows AI search and training crawlers. See https://amisearchab
 - https://amisearchable.cc/guides/llms-txt-vs-robots-txt
 - https://amisearchable.cc/guides/how-to-allow-perplexitybot
 - https://amisearchable.cc/guides/ai-ready-badge
+- https://amisearchable.cc/privacy
+- https://amisearchable.cc/terms
