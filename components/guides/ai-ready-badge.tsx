@@ -58,13 +58,13 @@ export function AiReadyBadgeGuide() {
 
       <GuideSection title="Customize the badge">
         <p>
-          On the report page, pick what the badge shows: ready/blocked, crawl score
-          (0–100), last searched, or citation hits when probes have run. You can also
-          scope the badge to ChatGPT, Claude, Perplexity, or Gemini. Query params:
-          <code className="font-mono text-foreground">?view=score</code>,{" "}
-          <code className="font-mono text-foreground">?view=age</code>,{" "}
-          <code className="font-mono text-foreground">?view=cited</code>,{" "}
-          <code className="font-mono text-foreground">?engine=chatgpt</code>.
+          On the report page, use the embed editor: pick engines (ChatGPT, Gemini, Grok,
+          …) and what to show (ready, score, last searched, cited). That builds one
+          composite badge. URL params look like{" "}
+          <code className="font-mono text-foreground">
+            ?engines=chatgpt,gemini,grok&amp;show=ready,score,age
+          </code>
+          . Claude and Perplexity citations are coming soon; crawl readiness still works.
         </p>
       </GuideSection>
 

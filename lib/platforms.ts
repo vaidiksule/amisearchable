@@ -18,6 +18,18 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
   grok: "Grok",
 };
 
+/** Citation probes not shipped yet (crawl readiness still shown). */
+export const CITATION_COMING_SOON = new Set<Platform>(["claude", "perplexity"]);
+
+/** Engines with live citation probes when API keys are set. */
+export const CITATION_LIVE_PLATFORMS = PLATFORMS.filter(
+  (platform) => !CITATION_COMING_SOON.has(platform),
+);
+
+export function isCitationComingSoon(platform: Platform): boolean {
+  return CITATION_COMING_SOON.has(platform);
+}
+
 /**
  * Search/fetch bots that gate “ready” for each AI product.
  * Grok has no dedicated robots token yet — we fall back to overall search-bot access.

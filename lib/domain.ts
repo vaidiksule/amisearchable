@@ -1,5 +1,6 @@
 import {
   BADGE_ASSET_VERSION,
+  type BadgeShowField,
   type BadgeStyle,
   type BadgeView,
 } from "@/lib/badge-svg";
@@ -10,8 +11,12 @@ const BLOCKED_HOSTS = new Set(["localhost", "metadata.google.internal"]);
 
 export type BadgeEmbedOptions = {
   style?: BadgeStyle;
+  /** @deprecated Prefer `show` + `engines` for composite badges. */
   view?: BadgeView;
+  /** @deprecated Prefer `engines`. */
   engine?: Platform | "all";
+  show?: BadgeShowField[];
+  engines?: Platform[];
   origin?: string;
   bust?: string;
 };
@@ -55,9 +60,23 @@ export function badgeSrc(domain: string, opts: BadgeEmbedOptions = {}): string {
   const origin = opts.origin ?? EMBED_ORIGIN;
   const params = new URLSearchParams();
   params.set("v", BADGE_ASSET_VERSION);
+
+  const show = opts.show?.length ? opts.show : undefined;
+  const engines = opts.engines?.length ? opts.engines : undefined;
+
+  if (show) {
+    params.set("show", show.join(","));
+  } else if (opts.view && opts.view !== "ready") {
+    params.set("view", opts.view);
+  }
+
+  if (engines) {
+    params.set("engines", engines.join(","));
+  } else if (opts.engine && opts.engine !== "all") {
+    params.set("engine", opts.engine);
+  }
+
   if (opts.style && opts.style !== "shield") params.set("style", opts.style);
-  if (opts.view && opts.view !== "ready") params.set("view", opts.view);
-  if (opts.engine && opts.engine !== "all") params.set("engine", opts.engine);
   if (opts.bust) params.set("t", opts.bust);
   return `${origin}/badge/${domain}?${params.toString()}`;
 }

@@ -1,4 +1,12 @@
-import { parseBadgeStyle, parseBadgeView, renderBadgeSvg } from "@/lib/badge-svg";
+import {
+  parseBadgeEngines,
+  parseBadgeShow,
+  parseBadgeStyle,
+  parseBadgeView,
+  renderBadgeSvg,
+  renderCompositeBadgeSvg,
+} from "@/lib/badge-svg";
+import { buildCompositeBadgeModel } from "@/lib/badge-model";
 import { getLatestCitations } from "@/lib/citations/store";
 import { citationSummary } from "@/lib/citations/types";
 import { getOrCreateCheck } from "@/lib/checks";
@@ -21,33 +29,48 @@ export async function GET(
 
   const params = new URL(request.url).searchParams;
   const style = parseBadgeStyle(params.get("style"));
-  const view = parseBadgeView(params.get("view"));
-  const engine = parsePlatform(params.get("engine"));
+  const showParam = params.get("show");
+  const enginesParam = params.get("engines");
+  const useComposite = showParam !== null || enginesParam !== null;
 
   const check = await getOrCreateCheck(domain);
   const score = scoreFromCheck(check);
   const citations = await getLatestCitations(domain);
 
-  const verdict =
-    engine === "all"
-      ? check.verdict
-      : platformVerdict(engine, {
-          robotsTxtFound: check.robotsTxtFound,
-          crawlers: check.crawlers,
-        });
+  let svg: string;
 
-  const scoreValue = engine === "all" ? score.total : score.platforms[engine];
-  const citationBits = citationSummary(citations, engine);
-
-  const svg = renderBadgeSvg({
-    verdict,
-    checkedAt: check.checkedAt,
-    score: scoreValue,
-    citations: citationBits,
-    view,
-    engine,
-    style,
-  });
+  if (useComposite) {
+    const show = parseBadgeShow(showParam);
+    const engines = parseBadgeEngines(enginesParam);
+    const model = buildCompositeBadgeModel({
+      result: check,
+      score,
+      citations,
+      engines,
+      show,
+    });
+    svg = renderCompositeBadgeSvg(model);
+  } else {
+    const view = parseBadgeView(params.get("view"));
+    const engine = parsePlatform(params.get("engine"));
+    const verdict =
+      engine === "all"
+        ? check.verdict
+        : platformVerdict(engine, {
+            robotsTxtFound: check.robotsTxtFound,
+            crawlers: check.crawlers,
+          });
+    const scoreValue = engine === "all" ? score.total : score.platforms[engine];
+    svg = renderBadgeSvg({
+      verdict,
+      checkedAt: check.checkedAt,
+      score: scoreValue,
+      citations: citationSummary(citations, engine),
+      view,
+      engine,
+      style,
+    });
+  }
 
   return new Response(svg, {
     headers: {

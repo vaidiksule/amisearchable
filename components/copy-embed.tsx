@@ -1,26 +1,31 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { StaticBadge } from "@/components/static-badge";
 import {
-  BADGE_STYLES,
-  BADGE_VIEWS,
-  type BadgeStyle,
-  type BadgeView,
+  BADGE_SHOW_FIELDS,
+  BADGE_SHOW_LABELS,
+  compositeBadgeDataUri,
+  compositeBadgeLabel,
+  type BadgeShowField,
 } from "@/lib/badge-svg";
+import { buildCompositeBadgeModel } from "@/lib/badge-model";
 import type { CitationSnapshot } from "@/lib/citations/types";
-import { citationSummary } from "@/lib/citations/types";
-import type { CheckResult, Verdict } from "@/lib/crawlers";
+import type { CheckResult } from "@/lib/crawlers";
 import { embedAgentPrompt, embedHtml, embedMarkdown } from "@/lib/domain";
 import {
+  CITATION_LIVE_PLATFORMS,
   PLATFORM_LABELS,
   PLATFORMS,
-  platformVerdict,
+  isCitationComingSoon,
   type Platform,
 } from "@/lib/platforms";
 import type { ScoreBreakdown } from "@/lib/score";
 
 type Format = "html" | "markdown";
+
+function toggleInList<T>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+}
 
 export function CopyEmbed({
   domain,
@@ -34,33 +39,27 @@ export function CopyEmbed({
   citations: CitationSnapshot | null;
 }) {
   const [format, setFormat] = useState<Format>("markdown");
-  const [style, setStyle] = useState<BadgeStyle>("shield");
-  const [view, setView] = useState<BadgeView>("ready");
-  const [engine, setEngine] = useState<Platform | "all">("all");
+  const [engines, setEngines] = useState<Platform[]>([...CITATION_LIVE_PLATFORMS]);
+  const [show, setShow] = useState<BadgeShowField[]>(["ready", "score"]);
   const [copied, setCopied] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  const opts = useMemo(() => ({ style, view, engine }), [style, view, engine]);
+  const opts = useMemo(() => ({ show, engines }), [show, engines]);
 
-  const preview = useMemo(() => {
-    const verdict: Verdict =
-      engine === "all"
-        ? result.verdict
-        : platformVerdict(engine, {
-            robotsTxtFound: result.robotsTxtFound,
-            crawlers: result.crawlers,
-          });
-    const scoreValue = engine === "all" ? score.total : score.platforms[engine];
-    return {
-      verdict,
-      checkedAt: result.checkedAt,
-      score: scoreValue,
-      citations: citationSummary(citations, engine),
-      view,
-      engine,
-      style,
-    };
-  }, [citations, engine, result, score, style, view]);
+  const composite = useMemo(
+    () =>
+      buildCompositeBadgeModel({
+        result,
+        score,
+        citations,
+        engines,
+        show: show.length > 0 ? show : ["ready"],
+      }),
+    [citations, engines, result, score, show],
+  );
+
+  const previewSrc = useMemo(() => compositeBadgeDataUri(composite), [composite]);
+  const previewAlt = useMemo(() => compositeBadgeLabel(composite), [composite]);
 
   const snippet =
     format === "html" ? embedHtml(domain, opts) : embedMarkdown(domain, opts);
@@ -86,10 +85,21 @@ export function CopyEmbed({
     }
   }
 
+  function toggleEngine(platform: Platform) {
+    setEngines((current) => toggleInList(current, platform));
+  }
+
+  function toggleShow(field: BadgeShowField) {
+    setShow((current) => {
+      const next = toggleInList(current, field);
+      return next.length > 0 ? next : current;
+    });
+  }
+
   return (
     <section className="rounded-lg border border-border bg-surface p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-medium">Embed</h2>
+        <h2 className="text-sm font-medium">Embed editor</h2>
         <div className="flex text-xs">
           {(["markdown", "html"] as const).map((option) => (
             <button
@@ -106,89 +116,86 @@ export function CopyEmbed({
         </div>
       </div>
 
-      <p className="mb-2 text-xs text-muted">Show</p>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {BADGE_VIEWS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setView(option)}
-            className={`rounded-md border px-3 py-1.5 text-xs capitalize ${
-              view === option ? "border-foreground" : "border-border hover:border-stone-400"
-            }`}
-          >
-            {option === "age" ? "Last searched" : option}
-          </button>
-        ))}
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+        <div className="space-y-5">
+          <fieldset>
+            <legend className="text-xs text-muted">Engines</legend>
+            <div className="mt-2 space-y-2">
+              {PLATFORMS.map((platform) => {
+                const soon = isCitationComingSoon(platform);
+                const checked = engines.includes(platform);
+                return (
+                  <label
+                    key={platform}
+                    className="flex cursor-pointer items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleEngine(platform)}
+                      className="accent-foreground"
+                    />
+                    <span>
+                      {PLATFORM_LABELS[platform]}
+                      {soon ? (
+                        <span className="text-muted"> · coming soon</span>
+                      ) : null}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
 
-      <p className="mb-2 text-xs text-muted">Engine</p>
-      <div className="mb-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setEngine("all")}
-          className={`rounded-md border px-3 py-1.5 text-xs ${
-            engine === "all" ? "border-foreground" : "border-border hover:border-stone-400"
-          }`}
-        >
-          All
-        </button>
-        {PLATFORMS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setEngine(option)}
-            className={`rounded-md border px-3 py-1.5 text-xs ${
-              engine === option ? "border-foreground" : "border-border hover:border-stone-400"
-            }`}
-          >
-            {PLATFORM_LABELS[option]}
-          </button>
-        ))}
-      </div>
+          <fieldset>
+            <legend className="text-xs text-muted">Show</legend>
+            <div className="mt-2 space-y-2">
+              {BADGE_SHOW_FIELDS.map((field) => (
+                <label
+                  key={field}
+                  className="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={show.includes(field)}
+                    onChange={() => toggleShow(field)}
+                    className="accent-foreground"
+                  />
+                  <span>{BADGE_SHOW_LABELS[field]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
 
-      <p className="mb-2 text-xs text-muted">Style</p>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {BADGE_STYLES.map((option) => {
-          const selected = style === option;
-          return (
+        <div className="min-w-0 space-y-4">
+          <div className="rounded-md border border-border bg-background p-4">
+            <p className="mb-3 text-xs text-muted">Preview</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={previewSrc} alt={previewAlt} className="h-auto max-w-full" />
+          </div>
+
+          <pre className="overflow-x-auto rounded-md bg-code p-3 font-mono text-xs leading-6 text-code-text">
+            {snippet}
+          </pre>
+
+          <div className="flex flex-wrap gap-3">
             <button
-              key={option}
               type="button"
-              onClick={() => setStyle(option)}
-              className={`rounded-md border px-3 py-2 ${
-                selected ? "border-foreground" : "border-border hover:border-stone-400"
-              }`}
+              onClick={copy}
+              className="h-10 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
             >
-              <StaticBadge {...preview} style={option} className="h-5" />
+              {copied ? "Copied" : "Copy"}
             </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-4">
-        <StaticBadge {...preview} className="h-6" />
-      </div>
-
-      <pre className="overflow-x-auto rounded-md bg-code p-3 font-mono text-xs leading-6 text-code-text">
-        {snippet}
-      </pre>
-
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={copy}
-          className="h-10 rounded-md bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
-        >
-          {copied ? "Copied" : "Copy"}
-        </button>
-        <button
-          type="button"
-          onClick={copyPrompt}
-          className="h-10 rounded-md border border-border px-4 text-sm font-medium text-foreground hover:bg-background"
-        >
-          {copiedPrompt ? "Copied" : "Copy for Cursor"}
-        </button>
+            <button
+              type="button"
+              onClick={copyPrompt}
+              className="h-10 rounded-md border border-border px-4 text-sm font-medium text-foreground hover:bg-background"
+            >
+              {copiedPrompt ? "Copied" : "Copy for Cursor"}
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );

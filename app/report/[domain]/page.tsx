@@ -11,6 +11,7 @@ import { normalizeDomain } from "@/lib/domain";
 import {
   PLATFORM_LABELS,
   PLATFORMS,
+  isCitationComingSoon,
   platformVerdict,
   type Platform,
 } from "@/lib/platforms";
@@ -242,13 +243,15 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
       <section className="mt-8">
         <h2 className="text-sm font-medium">Platform readiness</h2>
         <p className="mt-1 text-sm text-muted">
-          Crawl access per AI product. Citation probes appear when Pro monitoring has run.
+          Crawl access per AI product. Live citation probes: ChatGPT, Gemini, Grok.
+          Claude and Perplexity citations coming soon.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {PLATFORMS.map((platform: Platform) => {
             const verdict = platformVerdict(platform, result);
             const platformScore = score.platforms[platform];
             const cite = citations?.engines[platform];
+            const comingSoon = isCitationComingSoon(platform);
             return (
               <div
                 key={platform}
@@ -256,6 +259,7 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
               >
                 <p className="text-xs uppercase tracking-wide text-muted">
                   {PLATFORM_LABELS[platform]}
+                  {comingSoon ? " · coming soon" : null}
                 </p>
                 <p className={`mt-2 text-2xl font-semibold ${scoreClass(platformScore)}`}>
                   {platformScore}
@@ -263,9 +267,11 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
                 </p>
                 <p className={`mt-1 text-sm ${readyClass(verdict)}`}>{readyLabel(verdict)}</p>
                 <p className="mt-2 text-xs text-muted">
-                  {cite && !cite.skipped && cite.probes > 0
-                    ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
-                    : "Citations: not probed yet"}
+                  {comingSoon
+                    ? "Citations: coming soon"
+                    : cite && !cite.skipped && cite.probes > 0
+                      ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
+                      : "Citations: not probed yet"}
                 </p>
               </div>
             );

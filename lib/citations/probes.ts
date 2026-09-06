@@ -4,19 +4,19 @@ import {
   type EngineCitation,
 } from "@/lib/citations/types";
 import type { Platform } from "@/lib/platforms";
+import { isCitationComingSoon } from "@/lib/platforms";
 
 type ProbeFn = (domain: string, query: string) => Promise<string[]>;
 
 export function configuredCitationEngines(): Platform[] {
   const engines: Platform[] = [];
   if (process.env.OPENAI_API_KEY?.trim()) engines.push("chatgpt");
-  if (process.env.ANTHROPIC_API_KEY?.trim()) engines.push("claude");
-  if (process.env.PERPLEXITY_API_KEY?.trim()) engines.push("perplexity");
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim()) {
     engines.push("gemini");
   }
   if (process.env.XAI_API_KEY?.trim()) engines.push("grok");
-  return engines;
+  // Claude + Perplexity: coming soon (skipped even if keys exist).
+  return engines.filter((engine) => !isCitationComingSoon(engine));
 }
 
 export async function probeEngine(
