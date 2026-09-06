@@ -28,7 +28,7 @@ export const BADGE_SHOW_FIELDS = ["ready", "score", "age", "cited"] as const;
 export type BadgeShowField = (typeof BADGE_SHOW_FIELDS)[number];
 
 /** Bump when badge artwork changes so browsers/CDNs drop stale SVGs. */
-export const BADGE_ASSET_VERSION = "9";
+export const BADGE_ASSET_VERSION = "10";
 
 export const BADGE_SHOW_LABELS: Record<BadgeShowField, string> = {
   ready: "Ready",
@@ -300,35 +300,47 @@ function renderCompactComposite(model: CompositeBadgeModel): string {
 </svg>`;
 }
 
-/** Round pills — label + capsule metric chips in one bar. */
+/** Round pills — one soft bar: name + score capsules (overall chip is outlined). */
 function renderPillsComposite(model: CompositeBadgeModel): string {
   const lines = compositeLines(model);
   const show = model.show.length > 0 ? model.show : (["ready"] as BadgeShowField[]);
-  const padX = 14;
-  const padY = 10;
-  const gap = 16;
-  const pillH = 22;
-  const height = padY * 2 + Math.max(28, pillH + 6);
+  const padX = 18;
+  const padY = 11;
+  const gap = 18;
+  const pillH = 24;
+  const height = 42;
 
-  type Cell = { label: string; pill: string; tone: Tone; overall: boolean; labelW: number; pillW: number };
+  type Cell = {
+    label: string;
+    pill: string;
+    tone: Tone;
+    overall: boolean;
+    score: number;
+    labelW: number;
+    pillW: number;
+  };
   const cells: Cell[] = lines.map((line) => {
-    const pill =
-      show.includes("score") && !show.includes("ready") && !show.includes("age") && !show.includes("cited")
-        ? `${line.score ?? 0}/100`
-        : line.status || "—";
-    const labelW = Math.round(Math.max(36, line.label.length * 7.4));
-    const pillW = Math.round(Math.max(44, pill.length * 6.6 + 18));
+    const scoreOnly =
+      show.includes("score") &&
+      !show.includes("ready") &&
+      !show.includes("age") &&
+      !show.includes("cited");
+    const pill = scoreOnly ? `${line.score ?? 0}/100` : line.status || "—";
+    const label = line.overall ? "Overall" : line.label;
+    const labelW = Math.round(Math.max(40, label.length * 7.6));
+    const pillW = Math.round(Math.max(48, pill.length * 6.8 + 20));
     return {
-      label: line.label,
+      label,
       pill,
       tone: line.tone,
       overall: Boolean(line.overall),
+      score: line.score ?? 0,
       labelW,
       pillW,
     };
   });
 
-  const cellWidths = cells.map((cell) => cell.labelW + 8 + cell.pillW);
+  const cellWidths = cells.map((cell) => cell.labelW + 10 + cell.pillW);
   const inner = cellWidths.reduce((a, b) => a + b, 0) + gap * Math.max(0, cells.length - 1);
   const width = padX * 2 + inner;
   const rx = height / 2;
@@ -336,20 +348,24 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
   let cursor = padX;
   const parts: string[] = [];
   cells.forEach((cell, index) => {
-    const cy = height / 2;
+    const cy = height / 2 + 0.5;
     const labelX = cursor;
-    const pillX = cursor + cell.labelW + 8;
+    const pillX = cursor + cell.labelW + 10;
     const pillY = (height - pillH) / 2;
-    const fill = pillFill(cell.tone);
-    const stroke = cell.overall ? `stroke="#161412" stroke-width="1.25"` : "";
+    const fill = scorePillFill(cell.score, cell.tone);
+    const overallStroke = cell.overall
+      ? `stroke="#1c1917" stroke-width="1.5"`
+      : `stroke="${fill.ring}" stroke-width="1"`;
     parts.push(`
-  <text x="${labelX}" y="${cy + 4}" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#18181b">${escapeXml(cell.label)}</text>
-  <rect x="${pillX}" y="${pillY}" width="${cell.pillW}" height="${pillH}" rx="${pillH / 2}" fill="${fill.bg}" ${stroke}/>
-  <text x="${pillX + cell.pillW / 2}" y="${cy + 4}" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="${fill.fg}">${escapeXml(cell.pill)}</text>`);
+  <text x="${labelX}" y="${cy + 4}" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="650" letter-spacing="-0.01em" fill="#1c1917">${escapeXml(cell.label)}</text>
+  <rect x="${pillX}" y="${pillY}" width="${cell.pillW}" height="${pillH}" rx="${pillH / 2}" fill="${fill.bg}" ${overallStroke}/>
+  <text x="${pillX + cell.pillW / 2}" y="${cy + 4}" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" fill="${fill.fg}">${escapeXml(cell.pill)}</text>`);
     cursor += cellWidths[index]! + gap;
     if (index < cells.length - 1) {
       const divX = cursor - gap / 2;
-      parts.push(`<line x1="${divX}" y1="${padY}" x2="${divX}" y2="${height - padY}" stroke="#e7e5e4"/>`);
+      parts.push(
+        `<line x1="${divX}" y1="${padY + 2}" x2="${divX}" y2="${height - padY - 2}" stroke="#e7e5e4" stroke-width="1"/>`,
+      );
     }
   });
 
@@ -357,7 +373,12 @@ function renderPillsComposite(model: CompositeBadgeModel): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" role="img" aria-label="${escapeXml(aria)}">
   <title>${escapeXml(aria)}</title>
-  <rect width="${width}" height="${height}" rx="${rx}" fill="#ffffff" stroke="#e7e5e4"/>
+  <defs>
+    <filter id="pillShadow" x="-4%" y="-12%" width="108%" height="130%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#1c1917" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect width="${width}" height="${height}" rx="${rx}" fill="#fffefb" stroke="#e8e4dc" filter="url(#pillShadow)"/>
   ${parts.join("\n")}
 </svg>`;
 }
@@ -600,11 +621,22 @@ function shortEngine(engine: Platform): string {
   return PLATFORM_LABELS[engine];
 }
 
-function pillFill(tone: Tone): { bg: string; fg: string } {
-  if (tone === "blocked") return { bg: "#dc2626", fg: "#ffffff" };
-  if (tone === "unclear") return { bg: "#d97706", fg: "#ffffff" };
-  if (tone === "pending") return { bg: "#a8a29e", fg: "#ffffff" };
-  return { bg: "#16a34a", fg: "#ffffff" };
+function scorePillFill(
+  score: number,
+  tone: Tone,
+): { bg: string; fg: string; ring: string } {
+  // Prefer score bands when present; fall back to verdict tone.
+  const band = score > 0 || tone === "ready" ? scoreTone(score) : tone;
+  if (band === "blocked" || tone === "blocked") {
+    return { bg: "#dc2626", fg: "#ffffff", ring: "#b91c1c" };
+  }
+  if (band === "unclear" || tone === "unclear") {
+    return { bg: "#d97706", fg: "#ffffff", ring: "#b45309" };
+  }
+  if (tone === "pending") {
+    return { bg: "#a8a29e", fg: "#ffffff", ring: "#78716c" };
+  }
+  return { bg: "#059669", fg: "#ffffff", ring: "#047857" };
 }
 
 type Tone = "ready" | "blocked" | "unclear" | "pending";

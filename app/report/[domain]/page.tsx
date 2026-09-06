@@ -284,7 +284,7 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
                     <p className="mt-2 text-xs text-muted">
                       {cite && !cite.skipped && cite.probes > 0
                         ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
-                        : "Citations: not probed yet"}
+                        : "Citations: not probed yet (weekly job for Pro-monitored domains)"}
                     </p>
                   </>
                 )}

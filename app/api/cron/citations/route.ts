@@ -1,6 +1,7 @@
 import { listMonitoredHostnames } from "@/lib/checks";
 import { configuredCitationEngines } from "@/lib/citations/probes";
 import { runCitationProbes } from "@/lib/citations/store";
+import { normalizeDomain } from "@/lib/domain";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -21,7 +22,26 @@ export async function GET(request: Request) {
     });
   }
 
-  const hostnames = await listMonitoredHostnames();
+  const url = new URL(request.url);
+  const only = url.searchParams.get("domain");
+  const hostnames = only
+    ? (() => {
+        const normalized = normalizeDomain(only);
+        return normalized ? [normalized] : [];
+      })()
+    : await listMonitoredHostnames();
+
+  if (hostnames.length === 0) {
+    return Response.json({
+      ok: true,
+      skipped: true,
+      reason: only
+        ? "Invalid domain"
+        : "No Pro-monitored domains — citations cron only probes domains with an active Pro monitor",
+      engines,
+    });
+  }
+
   let probed = 0;
   const errors: string[] = [];
 

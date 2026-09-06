@@ -221,9 +221,9 @@ export function CopyEmbed({
           </div>
 
           <p className="mt-3 text-xs text-muted">
-            Classic stacks shields; Inline lays them in a row; Round pills uses
-            name + score chips. Overall (when on) is the full crawl score in a
-            bordered capsule — engines stay bot-access only.
+            Classic stacks; Inline is a horizontal row; Round pills is one soft
+            bar with score chips. Overall (when on) uses a bordered chip and the
+            full crawl score — engines stay bot-access only.
           </p>
         </div>
       </div>
