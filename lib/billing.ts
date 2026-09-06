@@ -1,4 +1,5 @@
 import type { Profile } from "@/lib/auth";
+import { sendProWelcomeEmail } from "@/lib/alerts";
 import { normalizeDomain } from "@/lib/domain";
 import { addMonitor } from "@/lib/monitors";
 import { createPolarClient, isProSubscriptionStatus } from "@/lib/polar";
@@ -72,9 +73,15 @@ async function setUserPlan(input: {
   userId: string;
   plan: "free" | "pro";
   polarCustomerId?: string | null;
-}): Promise<boolean> {
+}): Promise<{ ok: boolean; upgradedToPro: boolean; email: string | null }> {
   const admin = createAdminClient();
-  if (!admin) return false;
+  if (!admin) return { ok: false, upgradedToPro: false, email: null };
+
+  const { data: existing } = await admin
+    .from("users")
+    .select("plan, email")
+    .eq("id", input.userId)
+    .maybeSingle();
 
   const patch: { plan: "free" | "pro"; polar_customer_id?: string } = {
     plan: input.plan,
@@ -86,9 +93,15 @@ async function setUserPlan(input: {
   const { error } = await admin.from("users").update(patch).eq("id", input.userId);
   if (error) {
     console.error("Failed to update user plan", error);
-    return false;
+    return { ok: false, upgradedToPro: false, email: null };
   }
-  return true;
+
+  const upgradedToPro = input.plan === "pro" && existing?.plan !== "pro";
+  return {
+    ok: true,
+    upgradedToPro,
+    email: typeof existing?.email === "string" ? existing.email : null,
+  };
 }
 
 export async function applySubscription(subscription: PolarSubscription): Promise<void> {
@@ -110,12 +123,16 @@ export async function applySubscription(subscription: PolarSubscription): Promis
   }
 
   const plan = isProSubscriptionStatus(subscription.status) ? "pro" : "free";
-  const ok = await setUserPlan({
+  const result = await setUserPlan({
     userId,
     plan,
     polarCustomerId: subscription.customerId,
   });
-  if (!ok || plan !== "pro") return;
+  if (!result.ok || plan !== "pro") return;
+
+  if (result.upgradedToPro) {
+    await sendProWelcomeEmail(result.email ?? subscription.customer.email ?? "");
+  }
 
   const rawDomain = subscription.metadata.domain;
   const domain = typeof rawDomain === "string" ? normalizeDomain(rawDomain) : null;
@@ -154,11 +171,14 @@ async function applyPaidCheckout(checkout: PolarCheckout): Promise<string | null
   }
 
   if (checkout.status === "succeeded" || checkout.status === "confirmed") {
-    await setUserPlan({
+    const result = await setUserPlan({
       userId,
       plan: "pro",
       polarCustomerId: checkout.customerId,
     });
+    if (result.ok && result.upgradedToPro) {
+      await sendProWelcomeEmail(result.email ?? checkout.customerEmail ?? "");
+    }
 
     const rawDomain = checkout.metadata.domain;
     const domain = typeof rawDomain === "string" ? normalizeDomain(rawDomain) : null;
