@@ -4,6 +4,8 @@ Shareable badge that shows whether a website is visible to AI search bots. Free 
 
 [![AI Searchable — AI crawler access badge for amisearchable.cc](https://amisearchable.cc/badge/amisearchable.cc?v=12&show=ready%2Cscore&engines=chatgpt%2Cgemini%2Cgrok&overall=1)](https://amisearchable.cc/report/amisearchable.cc)
 
+[![AI Searchable — AI crawler access badge for lazur.app](https://amisearchable.cc/badge/lazur.app?v=12&show=ready%2Cscore%2Cage&engines=chatgpt%2Cgemini%2Cgrok&style=pills)](https://amisearchable.cc/report/lazur.app)
+
 ## Stack
 
 Next.js (App Router) · Supabase · Polar · Vercel · Resend
