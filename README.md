@@ -2,6 +2,8 @@
 
 Shareable badge that shows whether a website is visible to AI search bots. Free one-time checks. Pro monitoring keeps the badge accurate.
 
+[![AI Searchable — AI crawler access badge for amisearchable.cc](https://amisearchable.cc/badge/amisearchable.cc?v=12&show=ready%2Cscore&engines=chatgpt%2Cgemini%2Cgrok&overall=1)](https://amisearchable.cc/report/amisearchable.cc)
+
 ## Stack
 
 Next.js (App Router) · Supabase · Polar · Vercel · Resend
