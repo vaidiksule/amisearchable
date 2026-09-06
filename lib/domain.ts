@@ -3,6 +3,7 @@ import {
   type BadgeShowField,
   type BadgeStyle,
   type BadgeView,
+  type CompositeStyle,
 } from "@/lib/badge-svg";
 import { EMBED_ORIGIN } from "@/lib/config";
 import type { Platform } from "@/lib/platforms";
@@ -10,10 +11,8 @@ import type { Platform } from "@/lib/platforms";
 const BLOCKED_HOSTS = new Set(["localhost", "metadata.google.internal"]);
 
 export type BadgeEmbedOptions = {
-  style?: BadgeStyle;
-  /** @deprecated Prefer `show` + `engines` for composite badges. */
+  style?: BadgeStyle | CompositeStyle;
   view?: BadgeView;
-  /** @deprecated Prefer `engines`. */
   engine?: Platform | "all";
   show?: BadgeShowField[];
   engines?: Platform[];
@@ -76,7 +75,9 @@ export function badgeSrc(domain: string, opts: BadgeEmbedOptions = {}): string {
     params.set("engine", opts.engine);
   }
 
-  if (opts.style && opts.style !== "shield") params.set("style", opts.style);
+  if (opts.style && opts.style !== "shield" && opts.style !== "classic") {
+    params.set("style", opts.style);
+  }
   if (opts.bust) params.set("t", opts.bust);
   return `${origin}/badge/${domain}?${params.toString()}`;
 }

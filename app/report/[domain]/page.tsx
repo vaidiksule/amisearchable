@@ -261,18 +261,29 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
                   {PLATFORM_LABELS[platform]}
                   {comingSoon ? " · coming soon" : null}
                 </p>
-                <p className={`mt-2 text-2xl font-semibold ${scoreClass(platformScore)}`}>
-                  {platformScore}
-                  <span className="text-sm font-normal text-muted"> / 100</span>
-                </p>
-                <p className={`mt-1 text-sm ${readyClass(verdict)}`}>{readyLabel(verdict)}</p>
-                <p className="mt-2 text-xs text-muted">
-                  {comingSoon
-                    ? "Citations: coming soon"
-                    : cite && !cite.skipped && cite.probes > 0
-                      ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
-                      : "Citations: not probed yet"}
-                </p>
+                {comingSoon ? (
+                  <>
+                    <p className={`mt-2 text-sm font-medium ${readyClass(verdict)}`}>
+                      Crawl: {readyLabel(verdict)}
+                    </p>
+                    <p className="mt-2 text-xs text-muted">
+                      Citations coming soon — score hidden until probes ship.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className={`mt-2 text-2xl font-semibold ${scoreClass(platformScore)}`}>
+                      {platformScore}
+                      <span className="text-sm font-normal text-muted"> / 100</span>
+                    </p>
+                    <p className={`mt-1 text-sm ${readyClass(verdict)}`}>{readyLabel(verdict)}</p>
+                    <p className="mt-2 text-xs text-muted">
+                      {cite && !cite.skipped && cite.probes > 0
+                        ? `Cited in ${cite.hits}/${cite.probes} probes · ${formatCheckedAt(cite.probedAt)}`
+                        : "Citations: not probed yet"}
+                    </p>
+                  </>
+                )}
               </div>
             );
           })}

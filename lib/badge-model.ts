@@ -20,8 +20,9 @@ export function buildCompositeBadgeModel(input: {
   citations: CitationSnapshot | null;
   engines: Platform[];
   show: BadgeShowField[];
+  style?: CompositeBadgeModel["style"];
 }): CompositeBadgeModel {
-  const { result, score, citations, engines, show } = input;
+  const { result, score, citations, engines, show, style } = input;
   const rows: EngineBadgeRow[] = engines.map((id) => {
     const verdict = platformVerdict(id, {
       robotsTxtFound: result.robotsTxtFound,
@@ -45,5 +46,6 @@ export function buildCompositeBadgeModel(input: {
     overallCitations: citationSummary(citations, "all"),
     engines: rows,
     show: show.length > 0 ? show : ["ready"],
+    style: style ?? "classic",
   };
 }

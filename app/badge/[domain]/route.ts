@@ -3,6 +3,7 @@ import {
   parseBadgeShow,
   parseBadgeStyle,
   parseBadgeView,
+  parseCompositeStyle,
   renderBadgeSvg,
   renderCompositeBadgeSvg,
 } from "@/lib/badge-svg";
@@ -28,7 +29,6 @@ export async function GET(
   }
 
   const params = new URL(request.url).searchParams;
-  const style = parseBadgeStyle(params.get("style"));
   const showParam = params.get("show");
   const enginesParam = params.get("engines");
   const useComposite = showParam !== null || enginesParam !== null;
@@ -42,15 +42,18 @@ export async function GET(
   if (useComposite) {
     const show = parseBadgeShow(showParam);
     const engines = parseBadgeEngines(enginesParam);
+    const style = parseCompositeStyle(params.get("style"));
     const model = buildCompositeBadgeModel({
       result: check,
       score,
       citations,
       engines,
       show,
+      style,
     });
     svg = renderCompositeBadgeSvg(model);
   } else {
+    const style = parseBadgeStyle(params.get("style"));
     const view = parseBadgeView(params.get("view"));
     const engine = parsePlatform(params.get("engine"));
     const verdict =
