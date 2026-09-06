@@ -92,10 +92,10 @@ export default function Home() {
         <h2 className="text-sm font-medium">In a real README</h2>
         <figure className="mt-4 overflow-hidden rounded-lg border border-border bg-[#0d1117]">
           <Image
-            src="/proof/github-readme-badge.png"
-            alt="GitHub README showing a live AI Searchable badge: ai search ready"
-            width={996}
-            height={608}
+            src="/proof/github-readme-ai-badges.png"
+            alt="GitHub README with AI Searchable badges for overall AI search, Gemini, and ChatGPT — all ready"
+            width={922}
+            height={756}
             className="h-auto w-full"
             priority={false}
           />
