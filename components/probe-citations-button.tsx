@@ -24,8 +24,9 @@ export function ProbeCitationsButton({ domain }: { domain: string }) {
   return (
     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-xs text-muted">
-        Citations stay “pending” until probed. Weekly cron runs Sunday; you can
-        also run a live probe now for monitored Pro domains.
+        Citations stay “pending” until probed. Pro searches run probes
+        automatically; weekly cron covers monitored domains; you can also probe
+        now.
       </p>
       <div className="flex shrink-0 flex-col items-stretch gap-1 sm:items-end">
         <button

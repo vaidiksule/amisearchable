@@ -11,3 +11,4 @@ grant all on public.users to service_role;
 grant all on public.domains to service_role;
 grant all on public.checks to service_role;
 grant all on public.monitors to service_role;
+grant all on public.badge_hits to service_role;

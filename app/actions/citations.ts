@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentProfile } from "@/lib/auth";
+import {
+  MIN_CITATION_PROBE_INTERVAL_MS,
+  citationProbeConfigured,
+} from "@/lib/citations/auto-probe";
 import { configuredCitationEngines } from "@/lib/citations/probes";
 import { getLatestCitations, runCitationProbes } from "@/lib/citations/store";
 import { normalizeDomain } from "@/lib/domain";
 import { userMonitorsHostname } from "@/lib/monitors";
-
-const MIN_PROBE_INTERVAL_MS = 10 * 60 * 1000;
 
 export type ProbeCitationsResult =
   | { ok: true; engines: string[]; summary: string }
@@ -31,19 +33,19 @@ export async function probeDomainCitations(domainInput: string): Promise<ProbeCi
     };
   }
 
-  const engines = configuredCitationEngines();
-  if (engines.length === 0) {
+  if (!citationProbeConfigured()) {
     return {
       ok: false,
       error: "No citation API keys configured on the server (OpenAI / Gemini / xAI).",
     };
   }
 
+  const engines = configuredCitationEngines();
   const existing = await getLatestCitations(domain);
   if (existing?.probedAt) {
     const age = Date.now() - new Date(existing.probedAt).getTime();
-    if (age >= 0 && age < MIN_PROBE_INTERVAL_MS) {
-      const mins = Math.ceil((MIN_PROBE_INTERVAL_MS - age) / 60_000);
+    if (age >= 0 && age < MIN_CITATION_PROBE_INTERVAL_MS) {
+      const mins = Math.ceil((MIN_CITATION_PROBE_INTERVAL_MS - age) / 60_000);
       return {
         ok: false,
         error: `Already probed recently — try again in ~${mins} min.`,

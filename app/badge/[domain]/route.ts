@@ -8,6 +8,7 @@ import {
   renderCompositeBadgeSvg,
 } from "@/lib/badge-svg";
 import { buildCompositeBadgeModel } from "@/lib/badge-model";
+import { recordBadgeHit } from "@/lib/badge-hits";
 import { getLatestCitations } from "@/lib/citations/store";
 import { citationSummary } from "@/lib/citations/types";
 import { getOrCreateCheck } from "@/lib/checks";
@@ -26,6 +27,17 @@ export async function GET(
 
   if (!domain) {
     return new Response("Invalid domain", { status: 400 });
+  }
+
+  // Fire-and-forget: never delay or break SVG serving.
+  try {
+    recordBadgeHit({
+      domain,
+      referer: request.headers.get("referer"),
+      userAgent: request.headers.get("user-agent"),
+    });
+  } catch {
+    // ignore
   }
 
   const params = new URL(request.url).searchParams;

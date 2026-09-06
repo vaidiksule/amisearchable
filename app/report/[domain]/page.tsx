@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { CopyEmbed } from "@/components/copy-embed";
 import { JsonLd } from "@/components/json-ld";
 import { PageFrame } from "@/components/page-frame";
 import { ProbeCitationsButton } from "@/components/probe-citations-button";
 import { badgeDataUri, badgeLabel } from "@/lib/badge-svg";
 import { getCurrentProfile } from "@/lib/auth";
+import {
+  citationsNeedProbe,
+  maybeRunCitationProbes,
+} from "@/lib/citations/auto-probe";
 import { getLatestCitations } from "@/lib/citations/store";
 import { getLatestCheck, getOrCreateCheck } from "@/lib/checks";
 import { SEARCH_BOTS, TRAINING_BOTS, type CrawlerStatus } from "@/lib/crawlers";
@@ -24,6 +30,7 @@ import { SITE_NAME, absoluteUrl } from "@/lib/seo";
 import { formatCheckedAt } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function generateMetadata(
   props: PageProps<"/report/[domain]">,
@@ -158,10 +165,33 @@ export default async function ReportPage(props: PageProps<"/report/[domain]">) {
 
   const result = await getOrCreateCheck(domain, { fresh });
   const score = scoreFromCheck(result);
-  const citations = await getLatestCitations(domain);
   const profile = await getCurrentProfile();
+  const isPro = profile?.plan === "pro";
   const canProbeCitations =
-    profile?.plan === "pro" && (await userMonitorsHostname(profile.id, domain));
+    Boolean(isPro) && profile !== null && (await userMonitorsHostname(profile.id, domain));
+
+  let citations = await getLatestCitations(domain);
+
+  // Pro searches auto-run citation probes (same cooldown as manual / cron).
+  if (isPro && (await citationsNeedProbe(domain))) {
+    if (!citations) {
+      try {
+        citations = await maybeRunCitationProbes(domain);
+      } catch (error) {
+        console.error("Auto citation probe failed", domain, error);
+      }
+    } else {
+      after(async () => {
+        try {
+          await maybeRunCitationProbes(domain);
+          revalidatePath(`/report/${domain}`);
+        } catch (error) {
+          console.error("Background citation probe failed", domain, error);
+        }
+      });
+    }
+  }
+
   const verdictTone = result.verdict === "pass" ? "text-accent" : "text-warn";
   const verdictTitle =
     result.verdict === "pass"
